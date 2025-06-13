@@ -1,0 +1,255 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'plugins/**'
+      - 'tests/integration/**'
+      - 'galaxy.yml'
+      - '.github/workflows/integration-tests.yml'
+
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'plugins/**'
+      - 'tests/integration/**'
+      - 'galaxy.yml'
+      - '.github/workflows/integration-tests.yml'
+
+  workflow_dispatch:
+    inputs:
+      test_target:
+        description: 'Specific test target to run (leave empty for all)'
+        required: false
+        default: ''
+      verbosity:
+        description: 'Ansible verbosity level'
+        required: false
+        default: '1'
+        type: choice
+        options:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
+
+env:
+  ANSIBLE_HOST_KEY_CHECKING: false
+  ANSIBLE_FORCE_COLOR: true
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.11']
+        ansible-version: 
+          - 'ansible>=6.0.0,<7.0.0'  # ansible-core 2.13
+          - 'ansible>=7.0.0,<8.0.0'  # ansible-core 2.14
+          - 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('tests/requirements.txt', 'requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+            ${{ runner.os }}-pip-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openssh-client sshpass
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ${{ matrix.ansible-version }}
+          pip install -r tests/requirements.txt
+          pip install -r requirements.txt
+
+      - name: Install required collections
+        run: |
+          ansible-galaxy collection install cisco.ios
+          ansible-galaxy collection install community.general
+          ansible-galaxy collection install ansible.netcommon
+
+      - name: Install current collection
+        run: |
+          ansible-galaxy collection install . --force
+
+      - name: Setup RADKit certificates
+        run: |
+          chmod +x .github/scripts/setup-radkit-certs.sh
+          .github/scripts/setup-radkit-certs.sh
+        env:
+          RADKIT_IDENTITY: ${{ secrets.RADKIT_IDENTITY }}
+          RADKIT_CERTIFICATE_BASE64: ${{ secrets.RADKIT_CERTIFICATE_BASE64 }}
+          RADKIT_PRIVATE_KEY_BASE64: ${{ secrets.RADKIT_PRIVATE_KEY_BASE64 }}
+          RADKIT_CHAIN_BASE64: ${{ secrets.RADKIT_CHAIN_BASE64 }}
+
+      - name: Create integration config from secrets
+        run: |
+          cat > tests/integration/integration_config.yml << EOF
+          ios_device_name_1: '${{ secrets.IOS_DEVICE_NAME_1 }}'
+          ios_device_name_2: '${{ secrets.IOS_DEVICE_NAME_2 }}'
+          linux_device_name_1: '${{ secrets.LINUX_DEVICE_NAME_1 }}'
+          http_device_name_1: '${{ secrets.HTTP_DEVICE_NAME_1 }}'
+          swagger_device_name_1: '${{ secrets.SWAGGER_DEVICE_NAME_1 }}'
+          ios_device_name_prefix: '${{ secrets.IOS_DEVICE_NAME_PREFIX }}'
+          radkit_service_serial: '${{ secrets.RADKIT_SERVICE_SERIAL }}'
+          radkit_identity: '${{ secrets.RADKIT_IDENTITY }}'
+          radkit_client_private_key_password_base64: '${{ secrets.RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 }}'
+          EOF
+
+      - name: Verify integration config
+        run: |
+          echo "Checking integration config..."
+          if [ ! -f "tests/integration/integration_config.yml" ]; then
+            echo "ERROR: integration_config.yml not created"
+            exit 1
+          fi
+          
+          # Check if required secrets are present (without exposing values)
+          python -c "
+          import yaml
+          with open('tests/integration/integration_config.yml', 'r') as f:
+              config = yaml.safe_load(f)
+          
+          required_keys = [
+              'ios_device_name_1', 'ios_device_name_2', 'linux_device_name_1',
+              'http_device_name_1', 'swagger_device_name_1', 'ios_device_name_prefix',
+              'radkit_service_serial', 'radkit_identity', 'radkit_client_private_key_password_base64'
+          ]
+          
+          missing = [key for key in required_keys if not config.get(key) or config.get(key) == '']
+          if missing:
+              print(f'ERROR: Missing or empty secrets: {missing}')
+              exit(1)
+          else:
+              print('All required secrets are present')
+          "
+
+      - name: Set up ansible.cfg
+        run: |
+          cat > ansible.cfg << EOF
+          [defaults]
+          host_key_checking = False
+          timeout = 30
+          gathering = explicit
+          interpreter_python = auto_silent
+          
+          [connection]
+          pipelining = True
+          
+          [inventory]
+          host_pattern_mismatch = ignore
+          EOF
+
+      - name: List available test targets
+        run: |
+          echo "Available integration test targets:"
+          find tests/integration/targets -maxdepth 1 -type d -exec basename {} \; | grep -v '^targets$' | sort
+
+      - name: Run integration tests - All targets
+        if: ${{ github.event.inputs.test_target == '' }}
+        run: |
+          cd tests/integration
+          verbosity_level=${{ github.event.inputs.verbosity || '1' }}
+          
+          # Run ansible-test integration with proper verbosity            ansible-test integration --color -v$verbosity_level \
+            --requirements \
+            --python ${{ matrix.python-version }}
+        env:
+          ANSIBLE_CONFIG: ${{ github.workspace }}/ansible.cfg
+          RADKIT_ANSIBLE_IDENTITY: ${{ secrets.RADKIT_IDENTITY }}
+          RADKIT_ANSIBLE_SERVICE_SERIAL: ${{ secrets.RADKIT_SERVICE_SERIAL }}
+          RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64: ${{ secrets.RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 }}
+
+      - name: Run integration tests - Specific target
+        if: ${{ github.event.inputs.test_target != '' }}
+        run: |
+          cd tests/integration
+          verbosity_level=${{ github.event.inputs.verbosity || '1' }}
+          
+          # Run specific target
+          ansible-test integration ${{ github.event.inputs.test_target }} \
+            --color -v$verbosity_level \
+            --requirements \
+            --python ${{ matrix.python-version }}
+        env:
+          ANSIBLE_CONFIG: ${{ github.workspace }}/ansible.cfg
+
+      - name: Run manual integration tests (fallback)
+        if: failure()
+        run: |
+          echo "Running manual integration tests as fallback..."
+          cd tests/integration
+          
+          # Create a simple inventory
+          cat > inventory << EOF
+          [ios_devices]
+          ${{ secrets.IOS_DEVICE_NAME_1 }}
+          ${{ secrets.IOS_DEVICE_NAME_2 }}
+          
+          [linux_devices]
+          ${{ secrets.LINUX_DEVICE_NAME_1 }}
+          
+          [http_devices]
+          ${{ secrets.HTTP_DEVICE_NAME_1 }}
+          
+          [swagger_devices]
+          ${{ secrets.SWAGGER_DEVICE_NAME_1 }}
+          EOF
+          
+          # Run basic connectivity tests
+          for target in targets/*/; do
+            target_name=$(basename "$target")
+            echo "Testing target: $target_name"
+            
+            if [ -f "$target/tasks/main.yml" ]; then
+              ansible-playbook -i inventory \
+                -e @integration_config.yml \
+                "$target/tasks/main.yml" \
+                -v || echo "Target $target_name failed"
+            fi
+          done
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results-py${{ matrix.python-version }}-${{ matrix.ansible-version }}
+          path: |
+            tests/integration/.ansible_test/
+            tests/integration/inventory
+            tests/integration/ansible.cfg
+          retention-days: 30
+
+  test-summary:
+    needs: integration-tests
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Integration Test Summary
+        run: |
+          if [ "${{ needs.integration-tests.result }}" == "success" ]; then
+            echo "✅ All integration tests passed!"
+          elif [ "${{ needs.integration-tests.result }}" == "failure" ]; then
+            echo "❌ Some integration tests failed"
+            exit 1
+          else
+            echo "⚠️ Integration tests were skipped or cancelled"
+          fi

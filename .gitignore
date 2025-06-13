@@ -6,8 +6,22 @@ __pycache__/
 *.pyc
 *.tar.gz
 .vscode/
-integration_config.yml
 venv/
+
+# Integration test secrets (never commit these!)
+tests/integration/integration_config.yml
+integration_config.yml
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Test artifacts and coverage
+.coverage
+coverage.xml
+.pytest_cache/
+.ansible_test/
 
 # Documentation build artifacts
 docs/plugins/

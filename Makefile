@@ -1,14 +1,39 @@
-# Makefile for Cisco RADKit Ansible Collection
-# Ansible Galaxy Collection development workflow
+# Makefile for cisco.radkit Ansible Collection
 
-.PHONY: help install-dev lint format clean docs build test-sanity test-integration
+.PHONY: help install test test-unit test-integration docs clean lint format check-secrets setup-local-testing build release
 
 # Default target
-help:	## Show this help message
-	@echo 'Usage: make [target] ...'
-	@echo ''
-	@echo 'Targets:'
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+help: ## Show this help message
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# Installation
+install: ## Install the collection and dependencies
+	@echo "🔧 Installing collection and dependencies..."
+	pip install -r requirements.txt
+	pip install -r tests/requirements.txt
+	ansible-galaxy collection install . --force
+	@echo "✅ Installation complete"
+
+# Testing
+test: test-unit test-integration ## Run all tests
+
+test-unit: ## Run unit tests
+	@echo "🧪 Running unit tests..."
+	./scripts/run-tests.sh unit
+
+test-integration: ## Run integration tests (requires config)
+	@echo "🧪 Running integration tests..."
+	./scripts/run-tests.sh integration
+
+test-integration-target: ## Run specific integration test target (usage: make test-integration-target TARGET=network_cli)
+	@echo "🧪 Running integration test target: $(TARGET)"
+	./scripts/run-tests.sh integration $(TARGET)
+
+# Development setup
+setup-local-testing: ## Set up local integration testing configuration
+	@echo "🔧 Setting up local testing configuration..."
+	./.github/setup-local-testing.sh
 
 # Development setup
 install-dev:	## Install development dependencies
@@ -70,6 +95,17 @@ format-check:	## Check code formatting without making changes
 docs:	## Build collection documentation
 	ansible-doc-extractor --template-dir docs/templates plugins/
 
+docs: ## Build documentation
+	@echo "📚 Building documentation..."
+	cd docs && ./build.sh
+	@echo "✅ Documentation built in docs/html/"
+
+docs-serve: ## Build and serve documentation locally
+	@echo "📚 Building and serving documentation..."
+	cd docs && ./build.sh
+	@echo "🌐 Serving documentation at http://localhost:8000"
+	@cd docs && python3 -m http.server 8000
+
 # Build and distribution
 build:	## Build the ansible collection
 	ansible-galaxy collection build --force
@@ -93,6 +129,51 @@ quality-check:	## Run all quality checks
 	$(MAKE) format-check
 	$(MAKE) lint
 	$(MAKE) test-sanity
+
+check-secrets: ## Check if all required secrets are configured (for CI)
+	@echo "🔍 Checking secrets configuration..."
+	@python3 -c "
+import yaml
+import sys
+import os
+
+# Check if integration config exists
+config_file = 'tests/integration/integration_config.yml'
+if not os.path.exists(config_file):
+    print('❌ Integration config not found. Run: make setup-local-testing')
+    sys.exit(1)
+
+# Load and validate config
+with open(config_file, 'r') as f:
+    config = yaml.safe_load(f)
+
+required_keys = [
+    'ios_device_name_1', 'ios_device_name_2', 'linux_device_name_1',
+    'http_device_name_1', 'swagger_device_name_1', 'ios_device_name_prefix',
+    'radkit_service_serial', 'radkit_identity', 'radkit_client_private_key_password_base64'
+]
+
+missing = []
+placeholder = []
+
+for key in required_keys:
+    value = config.get(key, '')
+    if not value:
+        missing.append(key)
+    elif '<' in str(value) and '>' in str(value):
+        placeholder.append(key)
+
+if missing:
+    print(f'❌ Missing keys: {missing}')
+    sys.exit(1)
+
+if placeholder:
+    print(f'⚠️  Keys with placeholder values: {placeholder}')
+    print('   Please update these with actual values')
+    sys.exit(1)
+
+print('✅ All secrets are properly configured')
+"
 
 # CI/CD targets suitable for Ansible collections
 ci:	## Run CI pipeline for ansible collection

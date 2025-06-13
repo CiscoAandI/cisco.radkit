@@ -1,0 +1,87 @@
+name: Integration Test Status Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'plugins/**'
+      - 'tests/integration/**'
+
+jobs:
+  check-integration-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if integration tests can run
+        run: |
+          echo "🔍 Checking integration test requirements..."
+          
+          # Check if integration test template exists
+          if [ ! -f "tests/integration/integration_config.yml.template" ]; then
+            echo "❌ Missing integration_config.yml.template"
+            exit 1
+          fi
+          
+          # Check if secrets are available (for main branch)
+          if [ "${{ github.ref }}" == "refs/heads/main" ] || [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            required_secrets=(
+              "IOS_DEVICE_NAME_1"
+              "IOS_DEVICE_NAME_2" 
+              "RADKIT_SERVICE_SERIAL"
+              "RADKIT_IDENTITY"
+              "RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64"
+            )
+            
+            missing_secrets=()
+            for secret in "${required_secrets[@]}"; do
+              if [ -z "${{ secrets[secret] }}" ]; then
+                missing_secrets+=("$secret")
+              fi
+            done
+            
+            if [ ${#missing_secrets[@]} -gt 0 ]; then
+              echo "❌ Missing required secrets for integration tests:"
+              printf '%s\n' "${missing_secrets[@]}"
+              echo ""
+              echo "Please set these secrets in repository settings:"
+              echo "Settings → Secrets and variables → Actions"
+              exit 1
+            fi
+            
+            echo "✅ All required secrets are configured"
+          else
+            echo "ℹ️  Running on PR - integration secrets not checked"
+          fi
+          
+          echo "✅ Integration test setup is valid"
+
+      - name: Validate test targets
+        run: |
+          echo "🧪 Validating integration test targets..."
+          
+          target_count=0
+          for target_dir in tests/integration/targets/*/; do
+            if [ -d "$target_dir" ]; then
+              target_name=$(basename "$target_dir")
+              echo "  → Found target: $target_name"
+              
+              # Check if target has tasks
+              if [ ! -f "$target_dir/tasks/main.yml" ] && [ ! -f "$target_dir/tasks/main.yaml" ]; then
+                echo "    ⚠️  Warning: No tasks/main.yml found for $target_name"
+              else
+                echo "    ✅ Has tasks/main.yml"
+              fi
+              
+              ((target_count++))
+            fi
+          done
+          
+          echo ""
+          echo "📊 Found $target_count integration test targets"
+          
+          if [ $target_count -eq 0 ]; then
+            echo "❌ No integration test targets found"
+            exit 1
+          fi
