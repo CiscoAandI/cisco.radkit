@@ -1,0 +1,22 @@
+---
+- name: Write running config to startup config as test
+  cisco.radkit.exec_and_wait:
+    device_name: '{{ ios_device_name_1 }}'
+    commands:
+      - "show clock"
+      - "copy running-config startup-config"
+    prompts:
+      - ".*yes/no].*"
+      - ".*confirm].*"
+      - ".startup-config.*"
+    answers:
+      - "yes\r"
+      - "\r"
+      - "\r"
+    seconds_to_wait: 60  # total time to wait for reload
+    delay_before_check: 1  # Delay before checking terminal
+  register: cmd_output
+
+- assert:
+    that:
+      - "'Building configuration' in cmd_output.stdout"

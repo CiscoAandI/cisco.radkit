@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  author: scdozier
+  description: RADKit Ansible Collection
+  company: "Cisco Systems"
+  license: "license (GPT-3.0)"
+  min_ansible_version: 2.15
+  galaxy_tags:
+    - network
+    - cisco

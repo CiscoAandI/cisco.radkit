@@ -1,0 +1,9 @@
+plugin: cisco.radkit.radkit
+strict: False
+keyed_groups:
+  # group devices based on device type (ex radkit_device_type_IOS)
+  - prefix: radkit_device_type
+    key: 'device_type'
+  # group devices based on description
+  - prefix: radkit_description
+    key: 'description'

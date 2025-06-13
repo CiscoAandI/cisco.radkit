@@ -1,0 +1,35 @@
+ansible.cfg
+tmp/
+.DS_Store
+__pycache__/
+.pytest_cache/
+*.pyc
+*.tar.gz
+.vscode/
+integration_config.yml
+venv/
+
+# Documentation build artifacts
+docs/plugins/
+docs/_build/
+docs/build/
+docs/temp-rst/
+docs/collections/
+docs/rst/collections/
+docs/examples/
+docs/.buildinfo
+docs/objects.inv
+docs/searchindex.js
+docs/search.html
+docs/index.html
+docs/_sources/
+docs/_static/
+
+# Keep only source documentation files
+!docs/conf.py
+!docs/antsibull-docs.cfg
+!docs/build.sh
+!docs/requirements.txt
+!docs/rst/index.rst
+!docs/rst/collections/index.rst
+!docs/*.md

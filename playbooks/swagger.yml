@@ -1,0 +1,37 @@
+# RADKIT Swagger Example
+#
+# This example shows how you can utilize RADKIT's Swagger/OpenAPI connection through
+# Ansible in to make API calls.  This requires credentials and API base path to be configured
+# within the RADKIT inventory.
+#
+# In order for RADKIT to make a connection, expose variables as environment variables or
+# optionally, add them as variables in the playbook.
+#
+#  export RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=$(echo -n 'mypassword' | base64)
+#  export RADKIT_ANSIBLE_IDENTITY="myuserid@cisco.com"
+#  export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
+#
+---
+- hosts: localhost
+  become: no
+  gather_facts: no
+  tasks:
+    - name:  Get alarms from vManage
+      cisco.radkit.swagger:
+        device_name: sandbox-sdwan-2
+        path: /alarms
+        method: get
+        status_code: [200]
+      register: swagger_output
+      delegate_to: localhost
+
+    - name:  Register a new NMS partner in vManage
+      cisco.radkit.swagger:
+        device_name: vwmage
+        path: /partner/{partnerType}
+        parameters: '{"partnerType": "dnac"}'
+        method: post
+        status_code: [200]
+        json: '{"name": "DNAC-test","partnerId": "dnac-test","description": "dnac-test"}'
+      register: swagger_output
+      delegate_to: localhost

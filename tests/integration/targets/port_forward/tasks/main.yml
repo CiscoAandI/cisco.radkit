@@ -1,0 +1,19 @@
+# Test port forward to device
+---
+- name: Test port forward to device
+  cisco.radkit.port_forward:
+    device_name: '{{ ios_device_name_1 }}'
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    local_port: 4000
+    destination_port: 22
+  async: 300
+  poll: 0
+  delegate_to: localhost
+
+- name: Check if port is open
+  ansible.builtin.wait_for:
+    port: 4000
+    delay: 10
+  delegate_to: localhost

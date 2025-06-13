@@ -1,0 +1,17 @@
+---
+- hosts: all
+  connection: cisco.radkit.network_cli
+  vars:
+    ansible_network_os: ios
+  gather_facts: no
+  tasks:
+    - name: Run show version and parse
+      ansible.utils.cli_parse:
+        command: "show version"
+        parser:
+          name: ansible.netcommon.pyats
+        set_fact: versions_fact
+
+    - name: Show version info
+      debug:
+        msg: "The OS is {{ versions_fact.version.os }} and the version is {{ versions_fact.version.version }}"

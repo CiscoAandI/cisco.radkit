@@ -1,0 +1,52 @@
+# YAML Lint Configuration for Ansible Collections
+
+extends: default
+
+rules:
+  # Line length
+  line-length:
+    max: 120
+    level: warning
+
+  # Comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  # Brackets
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+
+  # Braces
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Key ordering
+  key-ordering: disable
+
+  # Document start
+  document-start:
+    present: true
+
+  # Truthy values
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+
+ignore: |
+  .git/
+  .tox/
+  .venv/
+  venv/
+  __pycache__/
+  *.pyc
+  .pytest_cache/
+  build/
+  dist/
+  docs/_build/
+  tmp/

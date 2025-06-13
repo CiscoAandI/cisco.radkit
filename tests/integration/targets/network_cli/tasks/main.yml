@@ -1,0 +1,18 @@
+---
+# Test IOS Device with network_cli
+- name: Set network_os
+  set_fact:
+    ansible_network_os: ios
+    ansible_connection: cisco.radkit.network_cli
+    ansible_host: '{{ ios_device_name_1 }}'
+    inventory_hostname: '{{ ios_device_name_1 }}'
+
+- name: Run show version
+  cisco.ios.ios_command:
+    commands: show version
+  register: version_output
+  connection: cisco.radkit.network_cli
+
+- assert:
+    that:
+      - "'IOS' in version_output.stdout[0]"

@@ -1,0 +1,17 @@
+# Test HTTP module
+- name:  Execute HTTP GET on device myserver
+  cisco.radkit.http:
+    device_name: '{{ http_device_name_1 }}'
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    path: /dna/home
+    method: get
+    status_code: [200]
+    params: '{"foo":["bar","baz"]}'
+  register: http_output
+  delegate_to: localhost
+
+- assert:
+    that:
+      - "'</html>' in http_output.data"

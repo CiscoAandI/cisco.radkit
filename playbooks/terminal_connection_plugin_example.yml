@@ -1,0 +1,42 @@
+# Terminal Connection Plugin
+#
+# This example shows how an example playbook that can be run agaisnt a LINUX host.
+# Any existing linux module that works over SSH should work.
+#
+# In order for RADKIT to make a connection, expose variables as environment variables or
+# optionally, add them as variables in the playbook.
+#
+#  export RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=$(echo -n 'mypassword' | base64)
+#  export RADKIT_ANSIBLE_IDENTITY="myuserid@cisco.com"
+#  export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
+#
+---
+- name: Example playbook showing how to use cisco.radkit.terminal connection plugin
+  hosts: all
+  connection: cisco.radkit.terminal
+  become: true
+  gather_facts: false
+  vars:
+    radkit_service_serial: xxx-3gip-xxxx
+    ansible_remote_tmp: /tmp/.ansible/tmp
+    ansible_async_dir: /tmp/.ansible_async
+  tasks:
+    - name: See who is logged in
+      ansible.builtin.shell: who
+      register: who
+      changed_when: false
+
+    - name: Show who is logged in
+      ansible.builtin.debug:
+        msg: "{{ who.stdout_lines }}"
+
+    - name: Copying test file
+      ansible.builtin.copy:
+        src: /tmp/testfile.txt
+        dest: /tmp/testfile.txt
+        mode: 0700
+
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted

@@ -1,0 +1,79 @@
+# RADKIT Port Forward Example
+#
+# This example shows how you can utilize RADKIT's port forward ability with
+# Ansible in order to connect to devices through any TCP based protocol (SSH/HTTP/etc). With port
+# forwarding, device credentials must be store locally, those store on the RADKit service side
+# will not be used.
+#
+# This example shows how you can make open ssh for every host incrementing the local port by 1.
+# For example, host 1 is forwarded to local port 22 is 4000, host 2 is forwarded to local port 4001 etc.
+#
+# The port forward task is set with async to keep the process running in background (for 300 seconds in example).
+# You should adjust the time to be greater than the time you anticipate the play to run,
+# but not a crazy amount of time.  Pre_tasks were used here, but you can use tasks, or put the modules
+# in another play.
+#
+# Note that RADKIT requires that connections through the proxy be in format of <name>.<serial>.proxy
+#
+# In order for RADKIT to make a connection, expose variables as environment variables or
+# optionally, add them as variables in the playbook.
+#
+#  export RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=$(echo -n 'mypassword' | base64)
+#  export RADKIT_ANSIBLE_IDENTITY="myuserid@cisco.com"
+#  export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
+#
+---
+- hosts: all
+  become: no
+  gather_facts: no
+  #vars_file: var.yml
+  vars:
+    radkit_service_serial: 3z9v-3gip-0jxk
+    # This is the base port, each host will be 4000 + index (4001, 4002, etc)
+    local_port_base_num: 4000
+    # in this example, we will forward ssh port
+    destination_port: 22
+    ansible_ssh_host: 127.0.0.1
+  pre_tasks:
+    - name: Get a host index number from ansible_hosts
+      set_fact:
+        host_index: "{{ lookup('ansible.utils.index_of', data=ansible_play_hosts, test='eq', value=inventory_hostname, wantlist=True)[0] }}"
+      delegate_to: localhost
+
+    - name: Create local_port var
+      set_fact:
+        local_port: "{{ local_port_base_num|int + host_index|int }}"
+        ansible_ssh_port: "{{ local_port_base_num|int + host_index|int }}"
+      delegate_to: localhost
+
+    - name: Test RADKIT Port Forward To Find Potential Config Errors (optional)
+      cisco.radkit.port_forward:
+        device_name: "{{ inventory_hostname }}"
+        local_port: "{{ local_port }}"
+        destination_port: "{{ destination_port }}"
+        test: True
+      delegate_to: localhost
+
+    - name: Start RADKIT Port Forward And Leave Running for 300 Seconds (adjust time based on playbook exec time)
+      cisco.radkit.port_forward:
+        device_name: "{{ inventory_hostname }}"
+        local_port: "{{ local_port }}"
+        destination_port: "{{ destination_port }}"
+      async: 300
+      poll: 0
+      delegate_to: localhost
+
+    - name: Wait for local port to become open (it takes a little bit for forward to start)
+      ansible.builtin.wait_for:
+        port: "{{ local_port }}"
+        delay: 3
+      delegate_to: localhost
+  tasks:
+
+    - name: Example linux module 1 (note; credentials are passed locally)
+      service:
+        name: sshd
+        state: started
+
+    - name: Example linux module 2 (note; credentials are passed locally)
+      shell: echo $HOSTNAME
