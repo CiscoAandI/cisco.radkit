@@ -1,0 +1,97 @@
+name: Build Documentation
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**'
+      - 'plugins/**'
+      - 'meta/**'
+      - 'galaxy.yml'
+      - '.github/workflows/docs-build.yml'
+
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**'
+      - 'plugins/**'
+      - 'meta/**'
+      - 'galaxy.yml'
+      - '.github/workflows/docs-build.yml'
+
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-docs-${{ hashFiles('docs/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-docs-
+            ${{ runner.os }}-pip-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+
+      - name: Install collection dependencies
+        run: |
+          # Install the current collection in development mode
+          ansible-galaxy collection install . --force
+
+      - name: Build documentation
+        run: |
+          cd docs
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Check for documentation errors
+        run: |
+          # Check if build completed successfully
+          if [ ! -d "docs/html" ]; then
+            echo "Documentation build failed - html directory not created"
+            exit 1
+          fi
+          
+          # Check for critical files
+          if [ ! -f "docs/html/index.html" ]; then
+            echo "Documentation build failed - index.html not found"
+            exit 1
+          fi
+
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-html
+          path: docs/html/
+          retention-days: 30
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-logs
+          path: |
+            docs/temp-rst/
+            docs/build/
+          retention-days: 7

@@ -1,0 +1,140 @@
+name: Documentation Quality Check
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**'
+      - 'plugins/**'
+      - 'README.md'
+      - '.github/workflows/docs-quality.yml'
+
+  workflow_dispatch:
+
+jobs:
+  documentation-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+          pip install doc8 pyspelling
+
+      - name: Check RST syntax
+        run: |
+          # Check RST files for syntax errors
+          find docs/rst -name "*.rst" -exec python -m docutils.parsers.rst {} \; > /dev/null
+
+      - name: Check documentation style with doc8
+        run: |
+          # Check documentation style
+          doc8 docs/rst/ --max-line-length 100 --ignore D001
+
+      - name: Validate links in documentation
+        run: |
+          cd docs
+          # Install the collection for link checking
+          ansible-galaxy collection install .. --force
+          
+          # Build docs with linkcheck
+          sphinx-build -b linkcheck rst build -c . -W --keep-going || true
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "Checking for TODO/FIXME comments in documentation..."
+          if grep -r -n "TODO\|FIXME" docs/rst/ --include="*.rst"; then
+            echo "Found TODO/FIXME comments that should be addressed"
+            exit 1
+          else
+            echo "No TODO/FIXME comments found"
+          fi
+
+      - name: Validate galaxy.yml
+        run: |
+          python -c "
+          import yaml
+          import sys
+          try:
+              with open('galaxy.yml', 'r') as f:
+                  data = yaml.safe_load(f)
+              
+              required_fields = ['namespace', 'name', 'version', 'description', 'authors']
+              missing = [field for field in required_fields if field not in data]
+              
+              if missing:
+                  print(f'Missing required fields in galaxy.yml: {missing}')
+                  sys.exit(1)
+              
+              print('galaxy.yml validation passed')
+          except Exception as e:
+              print(f'Error validating galaxy.yml: {e}')
+              sys.exit(1)
+          "
+
+      - name: Check plugin documentation
+        run: |
+          echo "Checking that all plugins have proper documentation..."
+          
+          # Check that all plugins have documentation strings
+          python -c "
+          import os
+          import ast
+          import sys
+          
+          def check_docstring(filepath):
+              with open(filepath, 'r') as f:
+                  try:
+                      tree = ast.parse(f.read())
+                      return ast.get_docstring(tree) is not None
+                  except:
+                      return False
+          
+          errors = []
+          for root, dirs, files in os.walk('plugins'):
+              for file in files:
+                  if file.endswith('.py') and not file.startswith('__'):
+                      filepath = os.path.join(root, file)
+                      if not check_docstring(filepath):
+                          errors.append(filepath)
+          
+          if errors:
+              print('Files missing module docstrings:')
+              for error in errors:
+                  print(f'  - {error}')
+              sys.exit(1)
+          else:
+              print('All plugin files have docstrings')
+          "
+
+      - name: Generate documentation coverage report
+        run: |
+          echo "Documentation Coverage Report" > coverage-report.md
+          echo "=============================" >> coverage-report.md
+          echo "" >> coverage-report.md
+          
+          # Count documented vs undocumented plugins
+          echo "## Plugin Documentation Status" >> coverage-report.md
+          echo "" >> coverage-report.md
+          
+          find plugins -name "*.py" -not -name "__*" | wc -l > total_plugins.txt
+          echo "Total plugins: $(cat total_plugins.txt)" >> coverage-report.md
+          
+          # Add timestamp
+          echo "" >> coverage-report.md
+          echo "Generated on: $(date)" >> coverage-report.md
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-coverage-report
+          path: coverage-report.md
+          retention-days: 30
