@@ -26,20 +26,30 @@ jobs:
           
           # Check if secrets are available (for main branch)
           if [ "${{ github.ref }}" == "refs/heads/main" ] || [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            required_secrets=(
-              "IOS_DEVICE_NAME_1"
-              "IOS_DEVICE_NAME_2" 
-              "RADKIT_SERVICE_SERIAL"
-              "RADKIT_IDENTITY"
-              "RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64"
-            )
+            echo "🔍 Checking required secrets..."
             
+            # Check individual secrets (GitHub Actions doesn't support dynamic secret access)
             missing_secrets=()
-            for secret in "${required_secrets[@]}"; do
-              if [ -z "${{ secrets[secret] }}" ]; then
-                missing_secrets+=("$secret")
-              fi
-            done
+            
+            if [ -z "${{ secrets.IOS_DEVICE_NAME_1 }}" ]; then
+              missing_secrets+=("IOS_DEVICE_NAME_1")
+            fi
+            
+            if [ -z "${{ secrets.IOS_DEVICE_NAME_2 }}" ]; then
+              missing_secrets+=("IOS_DEVICE_NAME_2")
+            fi
+            
+            if [ -z "${{ secrets.RADKIT_SERVICE_SERIAL }}" ]; then
+              missing_secrets+=("RADKIT_SERVICE_SERIAL")
+            fi
+            
+            if [ -z "${{ secrets.RADKIT_IDENTITY }}" ]; then
+              missing_secrets+=("RADKIT_IDENTITY")
+            fi
+            
+            if [ -z "${{ secrets.RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 }}" ]; then
+              missing_secrets+=("RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64")
+            fi
             
             if [ ${#missing_secrets[@]} -gt 0 ]; then
               echo "❌ Missing required secrets for integration tests:"
