@@ -58,14 +58,16 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-xdist
 
-      - name: Install collection
+      - name: Install collection in proper structure
         run: |
-          ansible-galaxy collection install . --force
-
+          # Create the proper ansible_collections directory structure
+          mkdir -p ~/.ansible/collections/ansible_collections/cisco/radkit
+          cp -r . ~/.ansible/collections/ansible_collections/cisco/radkit/
+          
       - name: Run unit tests with ansible-test
         run: |
-          # Run ansible-test unit tests
-          cd tests
+          # Run ansible-test unit tests from the proper collection directory
+          cd ~/.ansible/collections/ansible_collections/cisco/radkit
           ansible-test units --color -v \
             --requirements \
             --python ${{ matrix.python-version }} \
@@ -85,11 +87,18 @@ jobs:
           fail_ci_if_error: false
           verbose: true
 
+      - name: Create artifact name
+        id: artifact-name
+        run: |
+          # Create a clean artifact name by removing invalid characters
+          CLEAN_ANSIBLE_VERSION=$(echo "${{ matrix.ansible-version }}" | sed 's/[<>=,]/-/g' | sed 's/--*/-/g' | sed 's/-$//')
+          echo "name=unit-test-results-py${{ matrix.python-version }}-${CLEAN_ANSIBLE_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-results-py${{ matrix.python-version }}-${{ matrix.ansible-version }}
+          name: ${{ steps.artifact-name.outputs.name }}
           path: |
             tests/.ansible_test/
             coverage.xml

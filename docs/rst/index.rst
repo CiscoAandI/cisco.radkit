@@ -133,13 +133,13 @@ Inventory plugins allow you pull devices from the remote RADKIT service into you
 This chart shows some of the differences:
 
 
- ==================================== ============================= ===================== ====================== ==================== ================= ======================= ============== 
-             .                         Terminal Connection Plugin    Network_CLI Plugin    Port Forward Module    HTTP Proxy Module    Swagger Module    Command/Genie Modules    HTTP Module   
- ==================================== ============================= ===================== ====================== ==================== ================= ======================= ============== 
-  Device credentials stored locally                                                                  X                      X                                                   X       
-  Device credentials stored remotely                X                         X                                                               X                 X                       
-  Supports network cli modules                                                X                      X                                                                                  
-  Supports linux  ssh based modules                 X                                                X                                                                                  
-  Supports http based modules                                                                        X                      X                                                           
-  RADKIT Functions                                                                                                                            X                 X               X       
- ==================================== ============================= ===================== ====================== ==================== ================= ======================= ============== 
+ ==================================== ============================= ===================== ====================== ==================== ================= ======================= ==============
+             .                         Terminal Connection Plugin    Network_CLI Plugin    Port Forward Module    HTTP Proxy Module    Swagger Module    Command/Genie Modules    HTTP Module
+ ==================================== ============================= ===================== ====================== ==================== ================= ======================= ==============
+  Device credentials stored locally                                                                  X                      X                                                   X
+  Device credentials stored remotely                X                         X                                                               X                 X
+  Supports network cli modules                                                X                      X
+  Supports linux  ssh based modules                 X                                                X
+  Supports http based modules                                                                        X                      X
+  RADKIT Functions                                                                                                                            X                 X               X
+ ==================================== ============================= ===================== ====================== ==================== ================= ======================= ==============

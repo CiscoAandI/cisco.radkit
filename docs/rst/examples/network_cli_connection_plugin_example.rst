@@ -9,7 +9,7 @@ You can use the ansible command combined with this plugin to execute a command a
 
 .. code-block:: bash
 
-    $ ansible daa-csr1:daa-csr2:daa-csr3 -i radkit_devices.yml -e "ansible_network_os=ios" -m cisco.ios.ios_command -a "commands='show ip bgp sum'"  --connection cisco.radkit.network_cli 
+    $ ansible daa-csr1:daa-csr2:daa-csr3 -i radkit_devices.yml -e "ansible_network_os=ios" -m cisco.ios.ios_command -a "commands='show ip bgp sum'"  --connection cisco.radkit.network_cli
     daa-csr3 | SUCCESS => {
         "changed": false,
         "stdout": [

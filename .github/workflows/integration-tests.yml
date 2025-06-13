@@ -86,9 +86,11 @@ jobs:
           ansible-galaxy collection install community.general
           ansible-galaxy collection install ansible.netcommon
 
-      - name: Install current collection
+      - name: Install current collection in proper structure
         run: |
-          ansible-galaxy collection install . --force
+          # Create the proper ansible_collections directory structure
+          mkdir -p ~/.ansible/collections/ansible_collections/cisco/radkit
+          cp -r . ~/.ansible/collections/ansible_collections/cisco/radkit/
 
       - name: Setup RADKit certificates
         run: |
@@ -102,7 +104,8 @@ jobs:
 
       - name: Create integration config from secrets
         run: |
-          cat > tests/integration/integration_config.yml << EOF
+          mkdir -p ~/.ansible/collections/ansible_collections/cisco/radkit/tests/integration
+          cat > ~/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml << EOF
           ios_device_name_1: '${{ secrets.IOS_DEVICE_NAME_1 }}'
           ios_device_name_2: '${{ secrets.IOS_DEVICE_NAME_2 }}'
           linux_device_name_1: '${{ secrets.LINUX_DEVICE_NAME_1 }}'
@@ -117,15 +120,18 @@ jobs:
       - name: Verify integration config
         run: |
           echo "Checking integration config..."
-          if [ ! -f "tests/integration/integration_config.yml" ]; then
-            echo "ERROR: integration_config.yml not created"
+          config_file="$HOME/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml"
+          if [ ! -f "$config_file" ]; then
+            echo "ERROR: integration_config.yml not created at $config_file"
             exit 1
           fi
           
           # Check if required secrets are present (without exposing values)
           python -c "
           import yaml
-          with open('tests/integration/integration_config.yml', 'r') as f:
+          import os
+          config_file = os.path.expanduser('~/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml')
+          with open(config_file, 'r') as f:
               config = yaml.safe_load(f)
           
           required_keys = [
@@ -166,7 +172,7 @@ jobs:
       - name: Run integration tests - All targets
         if: ${{ github.event.inputs.test_target == '' }}
         run: |
-          cd tests/integration
+          cd ~/.ansible/collections/ansible_collections/cisco/radkit
           verbosity_level=${{ github.event.inputs.verbosity || '1' }}
           
           # Run ansible-test integration with proper verbosity
@@ -182,7 +188,7 @@ jobs:
       - name: Run integration tests - Specific target
         if: ${{ github.event.inputs.test_target != '' }}
         run: |
-          cd tests/integration
+          cd ~/.ansible/collections/ansible_collections/cisco/radkit
           verbosity_level=${{ github.event.inputs.verbosity || '1' }}
           
           # Run specific target
@@ -228,11 +234,18 @@ jobs:
             fi
           done
 
+      - name: Create artifact name
+        id: artifact-name
+        run: |
+          # Create a clean artifact name by removing invalid characters
+          CLEAN_ANSIBLE_VERSION=$(echo "${{ matrix.ansible-version }}" | sed 's/[<>=,]/-/g' | sed 's/--*/-/g' | sed 's/-$//')
+          echo "name=integration-test-results-py${{ matrix.python-version }}-${CLEAN_ANSIBLE_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-test-results-py${{ matrix.python-version }}-${{ matrix.ansible-version }}
+          name: ${{ steps.artifact-name.outputs.name }}
           path: |
             tests/integration/.ansible_test/
             tests/integration/inventory
