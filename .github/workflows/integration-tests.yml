@@ -169,7 +169,8 @@ jobs:
           cd tests/integration
           verbosity_level=${{ github.event.inputs.verbosity || '1' }}
           
-          # Run ansible-test integration with proper verbosity            ansible-test integration --color -v$verbosity_level \
+          # Run ansible-test integration with proper verbosity
+          ansible-test integration --color -v$verbosity_level \
             --requirements \
             --python ${{ matrix.python-version }}
         env:

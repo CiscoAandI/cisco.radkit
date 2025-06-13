@@ -30,6 +30,7 @@ jobs:
           - 'ansible>=6.0.0,<7.0.0'  # ansible-core 2.13
           - 'ansible>=7.0.0,<8.0.0'  # ansible-core 2.14
           - 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
+          - 'ansible>=10.0.0,11.0.0'
 
     steps:
       - name: Checkout repository
@@ -78,7 +79,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11' && matrix.ansible-version == 'ansible>=8.0.0,<9.0.0'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./tests/.ansible_test/coverage.xml,./coverage.xml
           fail_ci_if_error: false
