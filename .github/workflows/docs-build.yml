@@ -68,18 +68,42 @@ jobs:
       - name: Check for documentation errors
         run: |
           # Check if build completed successfully
-          if [ ! -f "docs/index.html" ]; then
-            echo "Documentation build failed - index.html not found"
+          # First check if build created the html directory
+          if [ -d "docs/html" ]; then
+            echo "✅ HTML directory exists, checking for index files..."
+            
+            # Check for index.html in html directory or root docs
+            if [ -f "docs/html/index.html" ] || [ -f "docs/index.html" ] || [ -f "docs/html/collections/index.html" ]; then
+              echo "✅ Documentation build successful!"
+              echo "📄 Built files found:"
+              
+              # Show what was built
+              if [ -f "docs/index.html" ]; then
+                echo "Found root index: docs/index.html"
+              fi
+              if [ -f "docs/html/index.html" ]; then
+                echo "Found html index: docs/html/index.html"
+              fi
+              if [ -f "docs/html/collections/index.html" ]; then
+                echo "Found collections index: docs/html/collections/index.html"
+              fi
+              
+              # List some built files for verification
+              find docs/ -name "*.html" | head -5
+            else
+              echo "❌ Documentation build failed - no index files found"
+              echo "Listing docs directory contents:"
+              ls -la docs/
+              echo "Listing html subdirectory:"
+              ls -la docs/html/ 2>/dev/null || echo "No html directory"
+              exit 1
+            fi
+          else
+            echo "❌ Documentation build failed - html directory not created"
             echo "Listing docs directory contents:"
             ls -la docs/
-            echo "Checking for build artifacts:"
-            find docs/ -name "*.html" -o -name "index.*" | head -10
             exit 1
           fi
-          
-          echo "✅ Documentation build successful!"
-          echo "📄 Built files:"
-          ls -la docs/*.html 2>/dev/null | head -5 || echo "No HTML files found in docs root"
 
       - name: Upload documentation artifacts
         uses: actions/upload-artifact@v4

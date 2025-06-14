@@ -35,6 +35,7 @@ deprecated:
   why: "Replaced by ssh_proxy module for better compatibility and security"
   version: "2.0.0"
   alternative: "Use ssh_proxy module with ansible.netcommon.network_cli"
+  removed_from_collection: "3.0.0"
 version_added: 0.1.0
 requirements:
 - radkit-client

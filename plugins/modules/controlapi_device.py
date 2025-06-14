@@ -94,7 +94,7 @@ options:
                             - Password for terminal access.
                         type: str
                         required: True
-                        no_log: True
+                        no_log: true
                     private_key_password:
                         description:
                             - Private key password for terminal access.

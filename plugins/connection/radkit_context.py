@@ -2,6 +2,23 @@
 RADKit connection context management for Ansible connection plugins.
 """
 
+DOCUMENTATION = """
+name: radkit_context
+author:
+- Scott Dozier (@scdozier)
+short_description: RADKit connection context management (internal use)
+description:
+- Internal utility for managing RADKit client connections and contexts
+- Not intended for direct use by end users
+- Provides connection pooling and context management for RADKit plugins
+version_added: "2.0.0"
+requirements:
+- radkit-client
+notes:
+- This is an internal utility plugin and should not be used directly
+- Used by other RADKit connection plugins for connection management
+"""
+
 import threading
 import time
 import base64

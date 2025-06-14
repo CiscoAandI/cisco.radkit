@@ -2,7 +2,7 @@ name: Deploy Documentation
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 2.0.0 ]
     paths:
       - 'docs/**'
       - 'plugins/**'
@@ -36,7 +36,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -70,9 +70,39 @@ jobs:
           chmod +x build.sh
           ./build.sh
 
-      - name: Create .nojekyll file
+      - name: Prepare GitHub Pages content
         run: |
-          touch docs/html/.nojekyll
+          # Create the pages directory
+          mkdir -p _site
+          
+          # Check where the HTML files are and copy them appropriately
+          if [ -d "docs/html" ] && [ "$(ls -A docs/html 2>/dev/null)" ]; then
+            echo "✅ Found built docs in docs/html/, copying to _site..."
+            cp -r docs/html/* _site/
+          elif ls docs/*.html 1> /dev/null 2>&1; then
+            echo "✅ Found HTML files in docs root, copying to _site..."
+            cp docs/*.html _site/
+            # Copy any subdirectories that might contain assets
+            for dir in docs/*/; do
+              if [ -d "$dir" ] && [ "$(basename "$dir")" != "rst" ] && [ "$(basename "$dir")" != "temp-rst" ]; then
+                cp -r "$dir" _site/
+              fi
+            done
+          else
+            echo "❌ No HTML files found, creating error page..."
+            echo '<!DOCTYPE html><html><head><title>Documentation Build Failed</title></head><body><h1>Documentation Build Failed</h1><p>The documentation could not be built. Please check the build logs.</p></body></html>' > _site/index.html
+          fi
+          
+          # Ensure .nojekyll file exists
+          touch _site/.nojekyll
+          
+          # Create redirect to main content if needed
+          if [ ! -f "_site/index.html" ] && [ -f "_site/collections/index.html" ]; then
+            echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=collections/index.html"><title>Redirecting...</title></head><body><p>Redirecting to <a href="collections/index.html">documentation</a>...</p></body></html>' > _site/index.html
+          fi
+          
+          echo "📄 Final site structure:"
+          find _site -type f -name "*.html" | head -10
 
       - name: Add custom domain (if needed)
         run: |
@@ -83,9 +113,9 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/html/
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

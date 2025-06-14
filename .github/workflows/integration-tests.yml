@@ -175,8 +175,17 @@ jobs:
           cd ~/.ansible/collections/ansible_collections/cisco/radkit
           verbosity_level=${{ github.event.inputs.verbosity || '1' }}
           
+          # Convert numeric verbosity to ansible-test format
+          case $verbosity_level in
+            0) verbosity_flags="" ;;
+            1) verbosity_flags="-v" ;;
+            2) verbosity_flags="-vv" ;;
+            3) verbosity_flags="-vvv" ;;
+            *) verbosity_flags="-v" ;;
+          esac
+          
           # Run ansible-test integration with proper verbosity
-          ansible-test integration --color -v$verbosity_level \
+          ansible-test integration --color $verbosity_flags \
             --requirements \
             --python ${{ matrix.python-version }}
         env:
@@ -191,9 +200,18 @@ jobs:
           cd ~/.ansible/collections/ansible_collections/cisco/radkit
           verbosity_level=${{ github.event.inputs.verbosity || '1' }}
           
+          # Convert numeric verbosity to ansible-test format
+          case $verbosity_level in
+            0) verbosity_flags="" ;;
+            1) verbosity_flags="-v" ;;
+            2) verbosity_flags="-vv" ;;
+            3) verbosity_flags="-vvv" ;;
+            *) verbosity_flags="-v" ;;
+          esac
+          
           # Run specific target
           ansible-test integration ${{ github.event.inputs.test_target }} \
-            --color -v$verbosity_level \
+            --color $verbosity_flags \
             --requirements \
             --python ${{ matrix.python-version }}
         env:
