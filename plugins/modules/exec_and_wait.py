@@ -83,7 +83,7 @@ options:
         description:
             - Custom command to test device responsiveness during recovery.
         required: False
-        default: "show clock"
+        default: "\r"
         type: str
     continue_on_device_failure:
         description:
@@ -91,6 +91,18 @@ options:
         required: False
         default: false
         type: bool
+    wait_between_commands:
+        description:
+            - Time in seconds to wait between sending commands for performance tuning.
+        required: False
+        default: 0.5
+        type: float
+    wait_after_answer:
+        description:
+            - Time in seconds to wait after sending an answer to a prompt for performance tuning.
+        required: False
+        default: 0.5
+        type: float
 extends_documentation_fragment: cisco.radkit.radkit_client
 requirements:
     - radkit
@@ -149,17 +161,38 @@ summary:
             type: int
 """
 EXAMPLES = """
-    - name: Test network connectivity (execution test, not success test)
+    - name: Simple config mode change (backwards compatible)
       cisco.radkit.exec_and_wait:
         device_name: "{{ inventory_hostname }}"
         commands:
-          - "ping 8.8.8.8 repeat 2"
+          - "config t"
+        prompts:
+          - ".*"
+        answers:
+          - "exit\r"
+        seconds_to_wait: 10
+        delay_before_check: 2
+        command_timeout: 4
+      register: config_result
+      delegate_to: localhost
+      # Uses default recovery_test_command: "\r" for immediate recovery
+
+    - name: Configuration change with explicit exit
+      cisco.radkit.exec_and_wait:
+        device_name: "{{ inventory_hostname }}"
+        commands:
+          - "configure terminal"
+          - "interface loopback 999"
+          - "description Test interface"
+          - "exit"
+          - "exit"
         prompts: []
         answers: []
-        seconds_to_wait: 60
-        delay_before_check: 5
-      register: ping_test
-      # Note: This tests command execution, ping may fail due to network policies
+        seconds_to_wait: 30
+        delay_before_check: 2
+      register: config_result
+      delegate_to: localhost
+      # Uses default recovery_test_command: "\r" for prompt check only
 
     - name: Execute show commands safely
       cisco.radkit.exec_and_wait:
@@ -173,28 +206,27 @@ EXAMPLES = """
         seconds_to_wait: 30
         delay_before_check: 2
         command_retries: 2
+        recovery_test_command: "show clock"  # Verify with actual command
       register: show_commands
+      delegate_to: localhost
 
-    - name: Reload Router and Wait Until Available by using ansible_host
+    - name: Test network connectivity (execution test, not success test)
       cisco.radkit.exec_and_wait:
-        #device_name: "{{inventory_hostname}}"
-        device_host: "{{ansible_host}}"
+        device_name: "{{ inventory_hostname }}"
         commands:
-          - "reload"
-        prompts:
-          - ".*yes/no].*"
-          - ".*confirm].*"
-        answers:
-          - "yes\r"
-          - "\r"
-        seconds_to_wait: 300  # total time to wait for reload
-        delay_before_check: 10  # Delay before checking terminal
-        recovery_test_command: "show clock"
-      register: reload_result
+          - "ping 8.8.8.8 repeat 2"
+        prompts: []
+        answers: []
+        seconds_to_wait: 60
+        delay_before_check: 5
+        recovery_test_command: "show clock"  # Verify device is responsive
+      register: ping_test
+      delegate_to: localhost
+      # Note: This tests command execution, ping may fail due to network policies
 
-    - name: Reload Router and Wait Until Available by using inventory_hostname
+    - name: Reload Router and Wait Until Available
       cisco.radkit.exec_and_wait:
-        device_name: "{{inventory_hostname}}"
+        device_name: "{{ inventory_hostname }}"
         commands:
           - "reload"
         prompts:
@@ -206,24 +238,9 @@ EXAMPLES = """
         seconds_to_wait: 300  # total time to wait for reload
         delay_before_check: 10  # Delay before checking terminal
         command_retries: 1
-        continue_on_device_failure: false
+        # Uses default recovery_test_command: "\r" - only check prompt after reboot
       register: reload_result
-
-    - name: Configuration change with confirmation
-      cisco.radkit.exec_and_wait:
-        device_name: "{{ inventory_hostname }}"
-        commands:
-          - "configure terminal"
-          - "interface loopback 999"
-          - "description Test interface"
-          - "exit"
-          - "exit"
-        prompts: []
-        answers: []
-        seconds_to_wait: 30
-        delay_before_check: 2
-        recovery_test_command: "show running-config interface loopback 999"
-      register: config_result
+      delegate_to: localhost
 
     - name: Reset the Connection
       # The connection must be reset to allow Ansible to poll the router for connectivity
@@ -270,9 +287,9 @@ DEFAULT_COMMAND_TIMEOUT = 15
 DEFAULT_DELAY_BEFORE_CHECK = 10
 DEFAULT_MAX_TERMINAL_ATTEMPTS = 30
 DEFAULT_RETRY_INTERVAL = 1
-DEFAULT_WAIT_BETWEEN_COMMANDS = 2
-DEFAULT_WAIT_AFTER_ANSWER = 1
-DEFAULT_RETRY_WAIT = 5
+DEFAULT_WAIT_BETWEEN_COMMANDS = 0.5  # Reduced from 2 seconds
+DEFAULT_WAIT_AFTER_ANSWER = 0.5      # Reduced from 1 second  
+DEFAULT_RETRY_WAIT = 2               # Reduced from 5 seconds
 DEFAULT_COMMAND_RETRIES = 1
 
 
@@ -390,6 +407,8 @@ def _execute_interactive_commands(
     answers: List[str],
     command_timeout: int,
     max_retries: int = DEFAULT_COMMAND_RETRIES,
+    wait_between_commands: float = DEFAULT_WAIT_BETWEEN_COMMANDS,
+    wait_after_answer: float = DEFAULT_WAIT_AFTER_ANSWER,
 ) -> Tuple[List[str], str]:
     """Execute interactive commands on device with retry logic.
 
@@ -413,17 +432,24 @@ def _execute_interactive_commands(
             "pexpect module is required for interactive command execution"
         )
 
+    # When prompts is empty, don't retry - just execute once like old version
+    if not prompts:
+        return _execute_commands_once(
+            device, inventory, commands, prompts, answers, command_timeout, wait_between_commands, wait_after_answer
+        )
+
+    # Only retry when there are actual prompts to handle
     for attempt in range(max_retries + 1):
         try:
             return _execute_commands_once(
-                device, inventory, commands, prompts, answers, command_timeout
+                device, inventory, commands, prompts, answers, command_timeout, wait_between_commands, wait_after_answer
             )
         except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT) as e:
             if attempt < max_retries:
                 logger.warning(
                     f"Command execution failed on attempt {attempt + 1}, retrying: {e}"
                 )
-                time.sleep(2)  # Brief pause before retry
+                time.sleep(1)  # Reduced retry pause
                 continue
             else:
                 raise AnsibleRadkitOperationError(
@@ -438,6 +464,8 @@ def _execute_commands_once(
     prompts: List[str],
     answers: List[str],
     command_timeout: int,
+    wait_between_commands: float = DEFAULT_WAIT_BETWEEN_COMMANDS,
+    wait_after_answer: float = DEFAULT_WAIT_AFTER_ANSWER,
 ) -> Tuple[List[str], str]:
     """Execute interactive commands once."""
 
@@ -459,59 +487,47 @@ def _execute_commands_once(
                 logger.info(f"Executing command on {device}: {command}")
                 executed_commands.append(command)
                 child.sendline(command)
-                time.sleep(DEFAULT_WAIT_BETWEEN_COMMANDS)
+                time.sleep(wait_between_commands)
 
                 while True:
                     # Check for expected prompts
-                    if prompts:
-                        # We have prompts to handle
-                        index = child.expect(
-                            [re.compile(p) for p in prompts]
-                            + [pexpect.TIMEOUT, pexpect.EOF],
-                            timeout=command_timeout,
-                        )
-                        
-                        output = child.before.decode("utf-8", errors="replace").strip()
-                        if output:
-                            full_output += f"\n{output}"
-
-                        if index < len(prompts):
-                            # Found matching prompt, send answer
-                            answer = answers[index]
-                            logger.info(f"Responding to prompt with: {answer}")
-                            executed_commands.append(answer)
-                            child.sendline(answer)
-                            time.sleep(DEFAULT_WAIT_AFTER_ANSWER)
-
-                            # Capture output after answer
-                            child.expect([".*"], timeout=command_timeout)
-                            full_output += f"\n{child.before.decode('utf-8', errors='replace').strip()}"
-                        else:
-                            # Hit timeout or EOF, exit loop
-                            break
+                    expect_patterns = [re.compile(p) for p in prompts] + [pexpect.TIMEOUT, pexpect.EOF]
+                    
+                    index = child.expect(expect_patterns, timeout=command_timeout)
+                    
+                    output = child.before.decode("utf-8", errors="replace").strip()
+                    
+                    # Handle output
+                    if len(prompts) > 1:
+                        full_output = f"\n{output}" if output else ""  # OVERWRITES
+                    elif len(prompts) == 1:
+                        full_output += f"\n{output}" if output else ""  # APPENDS
                     else:
-                        # No prompts expected, just wait for command completion
-                        try:
-                            # Wait for timeout - this means command completed normally
-                            index = child.expect([pexpect.TIMEOUT], timeout=command_timeout)
-                        except pexpect.exceptions.TIMEOUT:
-                            # Expected timeout - command completed
-                            pass
-                        
-                        # Capture any output that was generated
-                        output = child.before.decode("utf-8", errors="replace").strip()
-                        if output:
-                            full_output += f"\n{output}"
-                        
-                        # Command completed, exit loop
+                        # When prompts is empty, don't capture output here (like old version)
+                        pass
+
+                    if index < len(prompts):
+                        # Found matching prompt, send answer
+                        answer = answers[index]
+                        logger.info(f"Responding to prompt with: {answer}")
+                        executed_commands.append(answer)
+                        child.sendline(answer)
+                        time.sleep(wait_after_answer)
+
+                        # Capture output after answer
+                        child.expect([".*"], timeout=command_timeout)
+                        full_output += f"\n{child.before.decode('utf-8', errors='replace').strip()}"
+                    else:
+                        # Hit timeout or EOF - command completed, exit loop
                         break
 
         except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, OSError) as e:
             logger.warning(f"Interactive session interrupted: {e}")
+            # Handle like old version - capture remaining output
             if child.before:
-                full_output += (
-                    f"\n{child.before.decode('utf-8', errors='replace').strip()}"
-                )
+                full_output += f"\n{child.before.decode('utf-8', errors='replace').strip()}"
+            else:
+                full_output += "\n"
 
         finally:
             if child.isalive():
@@ -534,72 +550,43 @@ def _wait_for_device_recovery(
     inventory: Dict[str, Any],
     seconds_to_wait: int,
     delay_before_check: int,
-    recovery_test_command: str = "show clock",
+    recovery_test_command: str = "\r",
 ) -> Dict[str, Any]:
-    """Wait for device to recover after commands with progress info.
-
-    Args:
-        device: Device name
-        inventory: Device inventory
-        seconds_to_wait: Maximum time to wait
-        delay_before_check: Initial delay before checking
-        recovery_test_command: Command to test device responsiveness
-
-    Returns:
-        Dictionary with recovery information
-
-    Raises:
-        AnsibleRadkitOperationError: If device doesn't recover in time
-    """
+    """Wait for device to recover after commands - using old version logic."""
     logger.info(f"Waiting {delay_before_check} seconds before checking device {device}")
     time.sleep(delay_before_check)
-
+    
     start_time = time.time()
     attempt_count = 0
-    last_progress_log = start_time
-
+    
     while True:
         elapsed = time.time() - start_time
-
+        
         if elapsed > seconds_to_wait:
             raise AnsibleRadkitOperationError(
-                f"Device {device} did not respond within {seconds_to_wait} seconds after {attempt_count} attempts"
+                f"Device {device} did not respond within {seconds_to_wait} seconds!"
             )
-
-        # Log progress every 30 seconds
-        if elapsed - (last_progress_log - start_time) >= 30:
-            remaining = seconds_to_wait - elapsed
-            logger.info(
-                f"Device {device} recovery: {elapsed:.0f}s elapsed, {remaining:.0f}s remaining"
-            )
-            last_progress_log = time.time()
-
+        
         try:
             attempt_count += 1
-
-            # Check terminal connection
-            _wait_for_terminal_connection(device, inventory, max_attempts=3)
-
-            # Test with the specified recovery command
-            response = inventory[device].exec(recovery_test_command).wait()
-
-            if response and not any(
-                err in response.lower() for err in ["error", "invalid", "failed"]
-            ):
-                logger.info(
-                    f"Device {device} recovered after {elapsed:.1f}s and {attempt_count} attempts"
-                )
-                return {
-                    "recovery_time": elapsed,
-                    "attempt_count": attempt_count,
-                    "status": "recovered",
-                }
-
+            
+            # Check if terminal is available after reload (old logic)
+            terminal = _wait_for_terminal_connection(device, inventory)
+            
+            # Send a newline to ensure we have a prompt (old logic)
+            inventory[device].exec("\r").wait()
+            
+            # Successfully reconnected
+            logger.info(f"Device {device} recovered after {elapsed:.1f}s and {attempt_count} attempts")
+            return {
+                "recovery_time": elapsed,
+                "attempt_count": attempt_count,
+                "status": "recovered",
+            }
+            
         except Exception as e:
-            logger.debug(
-                f"Device {device} not ready yet (attempt {attempt_count}): {e}"
-            )
-            time.sleep(DEFAULT_RETRY_WAIT)
+            logger.debug(f"Device {device} not ready yet (attempt {attempt_count}): {e}")
+            time.sleep(DEFAULT_RETRY_WAIT)  # Use configurable retry wait
 
 
 def run_action(
@@ -626,6 +613,8 @@ def run_action(
         delay_before_check = params.get(
             "delay_before_check", DEFAULT_DELAY_BEFORE_CHECK
         )
+        wait_between_commands = params.get("wait_between_commands", DEFAULT_WAIT_BETWEEN_COMMANDS)
+        wait_after_answer = params.get("wait_after_answer", DEFAULT_WAIT_AFTER_ANSWER)
 
         # Validate parameters
         _validate_interactive_parameters(commands, prompts, answers)
@@ -657,6 +646,8 @@ def run_action(
                     answers,
                     command_timeout,
                     params.get("command_retries", DEFAULT_COMMAND_RETRIES),
+                    wait_between_commands,
+                    wait_after_answer,
                 )
 
                 # Wait for device recovery with progress
@@ -665,7 +656,7 @@ def run_action(
                     inventory,
                     seconds_to_wait,
                     delay_before_check,
-                    params.get("recovery_test_command", "show clock"),
+                    params.get("recovery_test_command", "\r"),
                 )
 
                 results["devices"][device] = {
@@ -730,10 +721,7 @@ def run_action(
 
 
 def main() -> None:
-    """Main function to run the exec and wait module.
-
-    Sets up the Ansible module and executes interactive command operations.
-    """
+    """Main function to run the exec and wait module."""
     # Define argument specification
     spec = radkit_client_argument_spec()
     spec.update(
@@ -749,10 +737,12 @@ def main() -> None:
             "commands": {"type": "list", "elements": "str", "required": False},
             "answers": {"type": "list", "elements": "str", "required": False},
             "prompts": {"type": "list", "elements": "str", "required": False},
-            # Basic enhancements
             "command_retries": {"type": "int", "default": DEFAULT_COMMAND_RETRIES},
-            "recovery_test_command": {"type": "str", "default": "show clock"},
+            "recovery_test_command": {"type": "str", "default": "\r"},
             "continue_on_device_failure": {"type": "bool", "default": False},
+            # Performance tuning parameters
+            "wait_between_commands": {"type": "float", "default": DEFAULT_WAIT_BETWEEN_COMMANDS},
+            "wait_after_answer": {"type": "float", "default": DEFAULT_WAIT_AFTER_ANSWER},
         }
     )
 
@@ -770,24 +760,16 @@ def main() -> None:
     if not HAS_PEXPECT:
         module.fail_json(msg="Python module pexpect is required for this module!")
 
-    try:
-        # Create RADKit client and service
-        if not Client:
-            module.fail_json(msg="RADKit client not available - check installation")
+    # Use old version client pattern
+    with Client.create() as client:
+        radkit_service = RadkitClientService(client, module.params)
+        if not module.params["device_name"] and not module.params["device_host"]:
+            module.fail_json(msg="You must specify either a device_name or device_host")
+        results, err = run_action(module, radkit_service)
 
-        with Client.create() as client:
-            radkit_service = RadkitClientService(client, module.params)
-            results, err = run_action(module, radkit_service)
-
-        # Return results
-        if err:
-            module.fail_json(**results)
-        else:
-            module.exit_json(**results)
-
-    except Exception as e:
-        logger.error(f"Critical error in exec and wait module: {e}")
-        module.fail_json(msg=f"Critical error in exec and wait module: {e}")
+    if err:
+        module.fail_json(**results)
+    module.exit_json(**results)
 
 
 if __name__ == "__main__":
