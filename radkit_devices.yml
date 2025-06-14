@@ -1,9 +1,74 @@
+# Enhanced RADKit Ansible Inventory Configuration
+# This file demonstrates the new features including SSH proxy support
+# and host/port overrides for the cisco.radkit.radkit inventory plugin
+
 plugin: cisco.radkit.radkit
 strict: False
+
+# SSH Proxy Mode Configuration
+# When enabled, all devices will use 127.0.0.1 as ansible_host and connect through SSH proxy
+ssh_proxy_mode: False
+ssh_proxy_port: 2222
+
+# Host and Port Override Examples
+# These allow specific devices to use different connection settings
+ansible_host_overrides:
+  # Override specific devices to use different hosts (useful for special cases)
+  # special_device: "192.168.1.100"
+  
+ansible_port_overrides:
+  # Override specific devices to use different ports
+  # router1: 2223
+  # router2: 2224
+  
+ssh_proxy_port_overrides:
+  # Override SSH proxy ports for specific devices
+  # router1: 2223
+  # router2: 2224
+
+# Device Grouping Configuration
 keyed_groups:
-  # group devices based on device type (ex radkit_device_type_IOS)
+  # Group devices based on device type (ex: radkit_device_type_IOS)
   - prefix: radkit_device_type
     key: 'device_type'
-  # group devices based on description
+  # Group devices based on description
   - prefix: radkit_description
     key: 'description'
+  # Create SSH proxy specific groups
+  - prefix: radkit_ssh_proxy
+    key: 'device_type'
+    separator: '_'
+
+# Compose additional variables for SSH proxy usage
+compose:
+  # Set ansible_user for SSH proxy format: device@service_serial
+  ansible_user: inventory_hostname + '@' + radkit_service_serial
+  # Set SSH connection args for proxy (disable host key checking)
+  ansible_ssh_common_args: "'-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
+
+# Optional: Filter devices by attribute and pattern
+# Uncomment these to filter the inventory
+# filter_attr: 'device_type'
+# filter_pattern: 'IOS'
+
+# Example usage scenarios:
+#
+# 1. Basic SSH Proxy Mode (all devices through proxy):
+#    ssh_proxy_mode: True
+#    ssh_proxy_port: 2222
+#
+# 2. Mixed Mode (some devices direct, some through proxy):
+#    ssh_proxy_mode: False
+#    ansible_host_overrides:
+#      proxy_device1: "127.0.0.1"
+#      proxy_device2: "127.0.0.1"
+#    ansible_port_overrides:
+#      proxy_device1: 2223
+#      proxy_device2: 2224
+#
+# 3. Port Forwarding Support:
+#    ssh_proxy_mode: False
+#    ansible_host_overrides:
+#      linux_server1: "127.0.0.1"
+#    ansible_port_overrides:
+#      linux_server1: 2225
