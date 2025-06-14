@@ -75,19 +75,24 @@ jobs:
           # Create the pages directory
           mkdir -p _site
           
-          # Check where the HTML files are and copy them appropriately
-          if [ -d "docs/html" ] && [ "$(ls -A docs/html 2>/dev/null)" ]; then
-            echo "✅ Found built docs in docs/html/, copying to _site..."
-            cp -r docs/html/* _site/
-          elif ls docs/*.html 1> /dev/null 2>&1; then
-            echo "✅ Found HTML files in docs root, copying to _site..."
-            cp docs/*.html _site/
-            # Copy any subdirectories that might contain assets
+          # The build script copies files directly to docs/ root, so check there first
+          if [ -f "docs/index.html" ]; then
+            echo "✅ Found built docs in docs root, copying to _site..."
+            # Copy HTML and other web assets from docs root
+            cp docs/*.html _site/ 2>/dev/null || true
+            cp docs/*.js _site/ 2>/dev/null || true
+            cp docs/*.inv _site/ 2>/dev/null || true
+            # Copy directories (like collections, _static, etc.)
             for dir in docs/*/; do
-              if [ -d "$dir" ] && [ "$(basename "$dir")" != "rst" ] && [ "$(basename "$dir")" != "temp-rst" ]; then
+              dirname=$(basename "$dir")
+              if [ "$dirname" != "rst" ] && [ "$dirname" != "temp-rst" ] && [ -d "$dir" ]; then
+                echo "Copying directory: $dirname"
                 cp -r "$dir" _site/
               fi
             done
+          elif [ -d "docs/html" ] && [ "$(ls -A docs/html 2>/dev/null)" ]; then
+            echo "✅ Found built docs in docs/html/, copying to _site..."
+            cp -r docs/html/* _site/
           else
             echo "❌ No HTML files found, creating error page..."
             echo '<!DOCTYPE html><html><head><title>Documentation Build Failed</title></head><body><h1>Documentation Build Failed</h1><p>The documentation could not be built. Please check the build logs.</p></body></html>' > _site/index.html
@@ -96,13 +101,17 @@ jobs:
           # Ensure .nojekyll file exists
           touch _site/.nojekyll
           
-          # Create redirect to main content if needed
-          if [ ! -f "_site/index.html" ] && [ -f "_site/collections/index.html" ]; then
-            echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=collections/index.html"><title>Redirecting...</title></head><body><p>Redirecting to <a href="collections/index.html">documentation</a>...</p></body></html>' > _site/index.html
+          # Verify we have an index file
+          if [ ! -f "_site/index.html" ]; then
+            if [ -f "_site/collections/index.html" ]; then
+              echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=collections/index.html"><title>Redirecting...</title></head><body><p>Redirecting to <a href="collections/index.html">documentation</a>...</p></body></html>' > _site/index.html
+            else
+              echo "⚠️  Warning: No index.html found in _site"
+            fi
           fi
           
           echo "📄 Final site structure:"
-          find _site -type f -name "*.html" | head -10
+          find _site -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) | head -10
 
       - name: Add custom domain (if needed)
         run: |

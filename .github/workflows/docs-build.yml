@@ -68,40 +68,30 @@ jobs:
       - name: Check for documentation errors
         run: |
           # Check if build completed successfully
-          # First check if build created the html directory
-          if [ -d "docs/html" ]; then
-            echo "✅ HTML directory exists, checking for index files..."
+          # The build script copies HTML files directly to docs/ root
+          if [ -f "docs/index.html" ]; then
+            echo "✅ Documentation build successful!"
+            echo "📄 Built files found:"
             
-            # Check for index.html in html directory or root docs
-            if [ -f "docs/html/index.html" ] || [ -f "docs/index.html" ] || [ -f "docs/html/collections/index.html" ]; then
-              echo "✅ Documentation build successful!"
-              echo "📄 Built files found:"
-              
-              # Show what was built
-              if [ -f "docs/index.html" ]; then
-                echo "Found root index: docs/index.html"
-              fi
-              if [ -f "docs/html/index.html" ]; then
-                echo "Found html index: docs/html/index.html"
-              fi
-              if [ -f "docs/html/collections/index.html" ]; then
-                echo "Found collections index: docs/html/collections/index.html"
-              fi
-              
-              # List some built files for verification
-              find docs/ -name "*.html" | head -5
-            else
-              echo "❌ Documentation build failed - no index files found"
-              echo "Listing docs directory contents:"
-              ls -la docs/
-              echo "Listing html subdirectory:"
-              ls -la docs/html/ 2>/dev/null || echo "No html directory"
-              exit 1
+            # Show what was built
+            echo "Found root index: docs/index.html"
+            if [ -f "docs/collections/index.html" ]; then
+              echo "Found collections index: docs/collections/index.html"
             fi
+            
+            # List some built files for verification
+            echo "HTML files in docs directory:"
+            find docs/ -name "*.html" | head -10
+            
+            echo "Directory structure:"
+            ls -la docs/ | grep -E "(index\.html|collections|_static|search\.html)"
+            
           else
-            echo "❌ Documentation build failed - html directory not created"
+            echo "❌ Documentation build failed - index.html not found in docs root"
             echo "Listing docs directory contents:"
             ls -la docs/
+            echo "Looking for any HTML files:"
+            find docs/ -name "*.html" | head -10 || echo "No HTML files found"
             exit 1
           fi
 
