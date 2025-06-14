@@ -66,15 +66,33 @@ options:
     json:
         description:
             - Request body to be JSON-encoded and sent with appropriate Content-Type
-            - Mutually exclusive with 'content' parameter
+            - Mutually exclusive with 'content' and 'data' parameters
         required: false
         type: dict
     content:
         description:
             - Raw request body content as string
-            - Mutually exclusive with 'json' parameter
+            - Mutually exclusive with 'json' and 'data' parameters
         required: false
         type: str
+    data:
+        description:
+            - Data to be form-encoded and sent in the request body
+            - Mutually exclusive with 'json' and 'content' parameters
+        required: false
+        type: dict
+    files:
+        description:
+            - Files to upload with the request (multipart form data)
+            - Can be used alone or with 'data' parameter
+        required: false
+        type: dict
+    timeout:
+        description:
+            - Timeout for the request on the Service side, in seconds
+            - If not specified, the Service default timeout will be used
+        required: false
+        type: float
     status_code:
         description:
             - List of valid HTTP status codes that indicate successful requests
@@ -178,7 +196,38 @@ EXAMPLES = """
     headers:
       Content-Type: text/plain
     status_code: [200, 204]
+    timeout: 30.0
   register: config_update
+  delegate_to: localhost
+
+# POST request with form data
+- name: Submit form data
+  cisco.radkit.http:
+    device_name: web-server
+    path: /api/form-submit
+    method: POST
+    data:
+      username: "admin"
+      password: "secret"
+      action: "login"
+    headers:
+      User-Agent: "Ansible-HTTP-Client"
+  register: form_response
+  delegate_to: localhost
+
+# File upload with multipart form data
+- name: Upload firmware file
+  cisco.radkit.http:
+    device_name: device-01
+    path: /api/firmware/upload
+    method: POST
+    files:
+      firmware: "/path/to/firmware.bin"
+    data:
+      version: "1.2.3"
+      description: "Latest firmware"
+    timeout: 300.0
+  register: upload_response
   delegate_to: localhost
 
 # Display response data
@@ -288,11 +337,14 @@ def _prepare_http_params(params: Dict[str, Any], method: str) -> Dict[str, Any]:
         "headers": params.get("headers"),
         "cookies": params.get("cookies"),
         "params": params.get("params"),
+        "timeout": params.get("timeout"),
     }
 
     # Only include body parameters for methods that support them
     if method not in ["GET", "HEAD", "DELETE"]:
         http_params["content"] = params.get("content")
+        http_params["data"] = params.get("data")
+        http_params["files"] = params.get("files")
         http_params["json"] = params.get("json")
 
     # Remove None values to avoid API issues
@@ -416,6 +468,18 @@ def main() -> None:
                 "type": "dict",
                 "required": False,
             },
+            "data": {
+                "type": "dict",
+                "required": False,
+            },
+            "files": {
+                "type": "dict",
+                "required": False,
+            },
+            "timeout": {
+                "type": "float",
+                "required": False,
+            },
             "status_code": {
                 "type": "list",
                 "elements": "int",
@@ -430,6 +494,8 @@ def main() -> None:
         supports_check_mode=False,
         mutually_exclusive=[
             ("content", "json"),
+            ("content", "data"),
+            ("json", "data"),
         ],
     )
 
@@ -486,17 +552,13 @@ def _validate_http_parameters(module: AnsibleModule) -> None:
         if not (100 <= code <= 599):
             module.fail_json(msg=f"Invalid HTTP status code: {code}")
 
-    # Validate content and json are not both provided
-    if params.get("content") and params.get("json"):
-        module.fail_json(msg="Cannot specify both 'content' and 'json' parameters")
-
     # Validate method-specific constraints
     method = params["method"].upper()
     if method in ["GET", "HEAD", "DELETE"] and (
-        params.get("content") or params.get("json")
+        params.get("content") or params.get("json") or params.get("data")
     ):
         module.fail_json(
-            msg=f"HTTP {method} requests cannot include request body (content or json)"
+            msg=f"HTTP {method} requests cannot include request body (content, json, or data)"
         )
 
 

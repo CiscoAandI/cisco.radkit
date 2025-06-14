@@ -45,14 +45,58 @@ options:
         type: str
     parameters:
         description:
-            -  HTTP params
+            - Path parameters for the Swagger path (e.g., for /users/{userId})
+            - Provided as a dictionary of parameter names and values
+        required: False
+        type: dict
+    params:
+        description:
+            - URL query parameters to append to the request
+            - Will be properly URL-encoded and appended to the path
+        required: False
+        type: dict
+    headers:
+        description:
+            - Custom HTTP headers to include in the request
+            - Common headers include 'Content-Type', 'Authorization', etc.
+        required: False
+        type: dict
+    cookies:
+        description:
+            - Cookie values to include in the request
+            - Provided as a dictionary of cookie names and values
         required: False
         type: dict
     json:
         description:
-            -  Request body to be encoded as json or None
+            - Request body to be JSON-encoded and sent with appropriate Content-Type
+            - Mutually exclusive with 'content' and 'data' parameters
         required: False
         type: dict
+    content:
+        description:
+            - Raw request body content as string or bytes
+            - Mutually exclusive with 'json' and 'data' parameters
+        required: False
+        type: str
+    data:
+        description:
+            - Data to be form-encoded and sent in the request body
+            - Mutually exclusive with 'json' and 'content' parameters
+        required: False
+        type: dict
+    files:
+        description:
+            - Files to upload with the request (multipart form data)
+            - Can be used alone or with 'data' parameter
+        required: False
+        type: dict
+    timeout:
+        description:
+            - Timeout for the request on the Service side, in seconds
+            - If not specified, the Service default timeout will be used
+        required: False
+        type: float
     status_code:
         description:
             - A list of valid, numeric, HTTP status codes that signifies success of the request.
@@ -72,32 +116,100 @@ data:
     type: str
 json:
     description: response body content decoded as json
-    returned: success
+    returned: when response contains valid JSON
     type: dict
 status_code:
-    description: status
+    description: HTTP response status code
+    returned: success
+    type: int
+headers:
+    description: HTTP response headers
+    returned: success
+    type: dict
+cookies:
+    description: HTTP response cookies
+    returned: when cookies are present in response
+    type: dict
+content_type:
+    description: HTTP response Content-Type header
+    returned: success
+    type: str
+url:
+    description: The complete URL that was requested
+    returned: success
+    type: str
+method:
+    description: The HTTP method that was used
     returned: success
     type: str
 """
 EXAMPLES = """
-    - name:  Get alarms from vManage
+    - name: Get alarms from vManage
       cisco.radkit.swagger:
         device_name: vmanage1
         path: /alarms
         method: get
         status_code: [200]
-        register: swagger_output
+      register: swagger_output
       delegate_to: localhost
 
-    - name:  Register a new NMS partner in vManage
+    - name: Register a new NMS partner in vManage with path parameters
       cisco.radkit.swagger:
         device_name: vmanage1
         path: /partner/{partnerType}
-        parameters: '{"partnerType": "dnac"}'
+        parameters: 
+          partnerType: "dnac"
         method: post
         status_code: [200]
-        json: '{"name": "DNAC-test","partnerId": "dnac-test","description": "dnac-test"}'
+        json: 
+          name: "DNAC-test"
+          partnerId: "dnac-test"
+          description: "dnac-test"
+        headers:
+          Authorization: "Bearer {{ auth_token }}"
       register: swagger_output
+      delegate_to: localhost
+
+    - name: Upload configuration file
+      cisco.radkit.swagger:
+        device_name: device1
+        path: /config/upload
+        method: post
+        files:
+          config: "{{ config_file_path }}"
+        data:
+          description: "New configuration"
+        timeout: 60.0
+      register: upload_result
+      delegate_to: localhost
+
+    - name: Get device status with query parameters
+      cisco.radkit.swagger:
+        device_name: device1
+        path: /status
+        method: get
+        params:
+          format: json
+          verbose: true
+        headers:
+          Accept: application/json
+        cookies:
+          sessionid: "{{ session_id }}"
+      register: status_result
+      delegate_to: localhost
+
+    - name: Send raw content data
+      cisco.radkit.swagger:
+        device_name: device1
+        path: /config/raw
+        method: put
+        content: |
+          interface GigabitEthernet0/1
+           ip address 192.168.1.1 255.255.255.0
+           no shutdown
+        headers:
+          Content-Type: text/plain
+      register: config_result
       delegate_to: localhost
 """
 import json
@@ -144,8 +256,14 @@ def _prepare_swagger_params(params: Dict[str, Any]) -> Dict[str, Any]:
     """Prepare parameters for Swagger API call, removing None values."""
     swagger_params = {
         "path": params["path"],
+        "parameters": params.get("parameters") or params.get("params"),  # Support both parameter names
+        "content": params.get("content"),
+        "data": params.get("data"),
+        "files": params.get("files"),
         "json": params.get("json"),
-        "parameters": params.get("parameters"),
+        "headers": params.get("headers"),
+        "cookies": params.get("cookies"),
+        "timeout": params.get("timeout"),
     }
 
     # Remove None values to avoid API issues
@@ -158,14 +276,31 @@ def _process_swagger_response(response: Any, method: str) -> Dict[str, Any]:
         "status_code": response.result.response_code,
         "data": response.result.text,
         "changed": method.lower() not in READ_ONLY_METHODS,
+        "method": method.upper(),
+        "url": getattr(response.result, 'url', ''),
+        "content_type": getattr(response.result, 'content_type', ''),
     }
+
+    # Add headers if available
+    if hasattr(response.result, 'headers'):
+        results["headers"] = dict(response.result.headers) if hasattr(response.result.headers, 'items') else {}
+    else:
+        results["headers"] = {}
+
+    # Add cookies if available  
+    if hasattr(response.result, 'cookies'):
+        results["cookies"] = response.result.cookies if response.result.cookies else {}
+    else:
+        results["cookies"] = {}
 
     # Parse JSON response if available
     if (
         hasattr(response.result, "content_type")
+        and response.result.content_type
         and "json" in response.result.content_type.lower()
     ):
-        results["json"] = response.result.json
+        if hasattr(response.result, "json") and response.result.json is not None:
+            results["json"] = response.result.json
 
     return results
 
@@ -300,8 +435,36 @@ def main() -> None:
                 "type": "dict",
                 "required": False,
             },
+            "params": {
+                "type": "dict",
+                "required": False,
+            },
+            "headers": {
+                "type": "dict",
+                "required": False,
+            },
+            "cookies": {
+                "type": "dict",
+                "required": False,
+            },
             "json": {
                 "type": "dict",
+                "required": False,
+            },
+            "content": {
+                "type": "str",
+                "required": False,
+            },
+            "data": {
+                "type": "dict",
+                "required": False,
+            },
+            "files": {
+                "type": "dict",
+                "required": False,
+            },
+            "timeout": {
+                "type": "float",
                 "required": False,
             },
             "status_code": {
@@ -312,7 +475,16 @@ def main() -> None:
         }
     )
 
-    module = AnsibleModule(argument_spec=spec, supports_check_mode=False)
+    module = AnsibleModule(
+        argument_spec=spec, 
+        supports_check_mode=False,
+        mutually_exclusive=[
+            ("content", "json"),
+            ("content", "data"),
+            ("json", "data"),
+            ("parameters", "params"),  # Only one way to specify parameters
+        ],
+    )
 
     # Validate dependencies
     if not HAS_RADKIT:
