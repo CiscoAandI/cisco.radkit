@@ -5,4 +5,3 @@ __metaclass__ = type
 
 # Terminal plugin tests removed as requested
 # All test functions have been commented out to achieve clean pytest run
-

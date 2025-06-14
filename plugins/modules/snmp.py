@@ -352,16 +352,16 @@ def _get_device_inventory(
 
 
 def _execute_snmp_operation(
-    inventory: Dict[str, Any], 
-    action: str, 
-    oids: List[str], 
+    inventory: Dict[str, Any],
+    action: str,
+    oids: List[str],
     timeout: float,
     limit: Optional[int] = None,
     retries: Optional[int] = None,
     concurrency: int = DEFAULT_CONCURRENCY,
     include_errors: bool = False,
     include_mib_info: bool = False,
-    output_format: str = "simple"
+    output_format: str = "simple",
 ) -> List[Dict[str, Union[str, Any]]]:
     """Execute SNMP operation on device.
 
@@ -397,13 +397,13 @@ def _execute_snmp_operation(
             # Build function arguments
             kwargs = {}
             if timeout is not None:
-                kwargs['timeout'] = timeout
+                kwargs["timeout"] = timeout
             if limit is not None:
-                kwargs['limit'] = limit
+                kwargs["limit"] = limit
             if retries is not None:
-                kwargs['retries'] = retries
-            if action.lower() in ['walk', 'get_bulk'] and concurrency is not None:
-                kwargs['concurrency'] = concurrency
+                kwargs["retries"] = retries
+            if action.lower() in ["walk", "get_bulk"] and concurrency is not None:
+                kwargs["concurrency"] = concurrency
 
             # Execute SNMP operation
             if len(oids) == 1:
@@ -425,25 +425,31 @@ def _execute_snmp_operation(
                 }
 
                 if output_format == "detailed":
-                    result_dict.update({
-                        "type": results_to_process[row].type,
-                        "value_str": results_to_process[row].value_str,
-                        "is_error": results_to_process[row].is_error,
-                    })
+                    result_dict.update(
+                        {
+                            "type": results_to_process[row].type,
+                            "value_str": results_to_process[row].value_str,
+                            "is_error": results_to_process[row].is_error,
+                        }
+                    )
 
                     if results_to_process[row].is_error:
-                        result_dict.update({
-                            "error_code": results_to_process[row].error_code,
-                            "error_str": results_to_process[row].error_str,
-                        })
+                        result_dict.update(
+                            {
+                                "error_code": results_to_process[row].error_code,
+                                "error_str": results_to_process[row].error_str,
+                            }
+                        )
 
                     if include_mib_info:
-                        result_dict.update({
-                            "label": results_to_process[row].label_str,
-                            "mib_module": results_to_process[row].mib_module,
-                            "mib_variable": results_to_process[row].mib_variable,
-                            "mib_str": results_to_process[row].mib_str,
-                        })
+                        result_dict.update(
+                            {
+                                "label": results_to_process[row].label_str,
+                                "mib_module": results_to_process[row].mib_module,
+                                "mib_variable": results_to_process[row].mib_variable,
+                                "mib_str": results_to_process[row].mib_str,
+                            }
+                        )
 
                 return_data.append(result_dict)
 
@@ -492,7 +498,7 @@ def run_action(
         # Validate inputs
         _validate_snmp_action(action)
         _validate_output_format(output_format)
-        
+
         # Normalize OIDs to list
         oids = _normalize_oids(oid_input)
 
@@ -510,7 +516,7 @@ def run_action(
             concurrency=concurrency,
             include_errors=include_errors,
             include_mib_info=include_mib_info,
-            output_format=output_format
+            output_format=output_format,
         )
 
         return {"data": snmp_data, "changed": False}, False
@@ -546,7 +552,11 @@ def main() -> None:
             "concurrency": {"type": "int", "default": DEFAULT_CONCURRENCY},
             "include_errors": {"type": "bool", "default": False},
             "include_mib_info": {"type": "bool", "default": False},
-            "output_format": {"type": "str", "default": "simple", "choices": VALID_OUTPUT_FORMATS},
+            "output_format": {
+                "type": "str",
+                "default": "simple",
+                "choices": VALID_OUTPUT_FORMATS,
+            },
         }
     )
 

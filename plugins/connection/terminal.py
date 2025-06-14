@@ -331,7 +331,10 @@ class Connection(ConnectionBase):
 
         while not self.radkit_client_created:
             if self.radkit_client_exception:
-                error_msg = self.radkit_client_exception_msg or "Unknown RADKit connection error occurred"
+                error_msg = (
+                    self.radkit_client_exception_msg
+                    or "Unknown RADKit connection error occurred"
+                )
                 raise AnsibleConnectionFailure(f"RADKIT failure: {error_msg}")
             time.sleep(0.5)
         display.vvv(

@@ -1,0 +1,87 @@
+---
+- name: Integration tests for exec_and_wait module
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ios_device_name_1: 'daa-csr2'
+    ios_device_name_2: 'daa-csr1'
+  environment:
+    RADKIT_ANSIBLE_SERVICE_SERIAL: "tkj9-0881-7p1j"
+    RADKIT_ANSIBLE_IDENTITY: "scdozier@cisco.com"
+    RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64: "Q2lzYzAxMjMh"
+  
+  tasks:
+    - name: Test exec_and_wait with non-intrusive ping command (execution test only)
+      cisco.radkit.exec_and_wait:
+        device_name: "{{ ios_device_name_1 }}"
+        commands:
+          - "ping 1.1.1.1 repeat 2"
+        prompts: []
+        answers: []
+        seconds_to_wait: 60
+        delay_before_check: 5
+        command_timeout: 30
+      register: ping_result
+
+    - name: Display ping execution results
+      debug:
+        msg: |
+          Ping command execution test completed:
+          Device: {{ ping_result.device_name }}
+          Commands executed: {{ ping_result.executed_commands }}
+          Output length: {{ ping_result.stdout | length }}
+          Changed: {{ ping_result.changed }}
+
+    - name: Test exec_and_wait with simple show command (guaranteed to work)
+      cisco.radkit.exec_and_wait:
+        device_name: "{{ ios_device_name_1 }}"
+        commands:
+          - "show clock"
+        prompts: []
+        answers: []
+        seconds_to_wait: 30
+        delay_before_check: 2
+        command_timeout: 15
+      register: clock_result
+
+    - name: Display clock results
+      debug:
+        msg: |
+          Show clock test completed:
+          Device: {{ clock_result.device_name }}
+          Commands executed: {{ clock_result.executed_commands }}
+          Output length: {{ clock_result.stdout | length }}
+          Changed: {{ clock_result.changed }}
+
+    - name: Test exec_and_wait with enhanced parameters
+      cisco.radkit.exec_and_wait:
+        device_name: "{{ ios_device_name_1 }}"
+        commands:
+          - "show ip interface brief"
+        prompts: []
+        answers: []
+        seconds_to_wait: 30
+        delay_before_check: 1
+        command_retries: 2
+        recovery_test_command: "show clock"
+      register: enhanced_result
+
+    - name: Display enhanced test results
+      debug:
+        msg: |
+          Enhanced parameters test completed:
+          Device: {{ enhanced_result.device_name }}
+          Commands executed: {{ enhanced_result.executed_commands }}
+          Output length: {{ enhanced_result.stdout | length }}
+          Changed: {{ enhanced_result.changed }}
+
+    - name: Summary of all tests
+      debug:
+        msg: |
+          Integration tests completed:
+          ================================
+          ✓ Ping execution test: {{ 'PASSED' if ping_result is succeeded else 'FAILED' }}
+          ✓ Show clock test: {{ 'PASSED' if clock_result is succeeded else 'FAILED' }}  
+          ✓ Enhanced parameters test: {{ 'PASSED' if enhanced_result is succeeded else 'FAILED' }}
+          
+          All tests focus on command execution, not network connectivity results.

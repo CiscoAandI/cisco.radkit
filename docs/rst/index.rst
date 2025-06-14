@@ -145,16 +145,21 @@ Connection Plugins vs Modules vs Inventory Plugins
 **Recommended Architecture (v2.0.0+):**
 
 **For Network Devices (Routers, Switches, Firewalls):**
+
 - ✅ **Recommended**: `ssh_proxy` module + standard `ansible.netcommon.network_cli`
-- **Benefits**: 
+- **Benefits**:
+
   - Device credentials remain on RADKit service (more secure)
   - Standard Ansible network modules work seamlessly
   - Better performance and compatibility
+
 - **Note**: Disable SSH host key checking (host keys change between sessions)
 
 **For Linux Servers:**
+
 - ✅ **Recommended**: `port_forward` module + standard SSH
 - **Benefits**:
+
   - Full SSH functionality including SCP/SFTP file transfers
   - Works with all standard Ansible modules
   - More reliable than SSH proxy for Linux hosts

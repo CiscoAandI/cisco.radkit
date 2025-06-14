@@ -256,7 +256,8 @@ def _prepare_swagger_params(params: Dict[str, Any]) -> Dict[str, Any]:
     """Prepare parameters for Swagger API call, removing None values."""
     swagger_params = {
         "path": params["path"],
-        "parameters": params.get("parameters") or params.get("params"),  # Support both parameter names
+        "parameters": params.get("parameters")
+        or params.get("params"),  # Support both parameter names
         "content": params.get("content"),
         "data": params.get("data"),
         "files": params.get("files"),
@@ -277,18 +278,22 @@ def _process_swagger_response(response: Any, method: str) -> Dict[str, Any]:
         "data": response.result.text,
         "changed": method.lower() not in READ_ONLY_METHODS,
         "method": method.upper(),
-        "url": getattr(response.result, 'url', ''),
-        "content_type": getattr(response.result, 'content_type', ''),
+        "url": getattr(response.result, "url", ""),
+        "content_type": getattr(response.result, "content_type", ""),
     }
 
     # Add headers if available
-    if hasattr(response.result, 'headers'):
-        results["headers"] = dict(response.result.headers) if hasattr(response.result.headers, 'items') else {}
+    if hasattr(response.result, "headers"):
+        results["headers"] = (
+            dict(response.result.headers)
+            if hasattr(response.result.headers, "items")
+            else {}
+        )
     else:
         results["headers"] = {}
 
-    # Add cookies if available  
-    if hasattr(response.result, 'cookies'):
+    # Add cookies if available
+    if hasattr(response.result, "cookies"):
         results["cookies"] = response.result.cookies if response.result.cookies else {}
     else:
         results["cookies"] = {}
@@ -317,15 +322,21 @@ def _validate_swagger_path(device: Any, path: str, device_name: str) -> None:
     """Validate that the Swagger path exists in the device's API specification."""
     try:
         # Check if the path exists in the swagger paths
-        if hasattr(device.swagger, 'paths') and path not in device.swagger.paths:
-            available_paths = list(device.swagger.paths.keys()) if hasattr(device.swagger, 'paths') else []
+        if hasattr(device.swagger, "paths") and path not in device.swagger.paths:
+            available_paths = (
+                list(device.swagger.paths.keys())
+                if hasattr(device.swagger, "paths")
+                else []
+            )
             raise AnsibleRadkitValidationError(
                 f"Swagger path '{path}' not found in API specification for device '{device_name}'. "
                 f"Available paths: {available_paths[:10]}{'...' if len(available_paths) > 10 else ''}"
             )
     except AttributeError:
         # If we can't check paths, we'll let the actual API call handle the error
-        logger.debug(f"Could not validate Swagger path '{path}' - proceeding with API call")
+        logger.debug(
+            f"Could not validate Swagger path '{path}' - proceeding with API call"
+        )
 
 
 def run_action(
@@ -392,8 +403,10 @@ def run_action(
 
     except KeyError as e:
         # Handle case where Swagger path is not found in the API specification
-        path = params.get('path', 'unknown')
-        logger.error(f"Swagger path '{path}' not found in API specification for device {device_name}")
+        path = params.get("path", "unknown")
+        logger.error(
+            f"Swagger path '{path}' not found in API specification for device {device_name}"
+        )
         raise AnsibleRadkitValidationError(
             f"Swagger path '{path}' not found in API specification for device '{device_name}'. "
             f"Please verify the path exists in the device's Swagger documentation."
@@ -409,6 +422,7 @@ def run_action(
         logger.error(f"Unexpected error in swagger module: {e}")
         # print traceback for debugging
         import traceback
+
         # get the traceback as a string
         tb_str = traceback.format_exc()
         return {"msg": f"Unexpected error: {str(tb_str)}", "changed": False}, True
@@ -476,7 +490,7 @@ def main() -> None:
     )
 
     module = AnsibleModule(
-        argument_spec=spec, 
+        argument_spec=spec,
         supports_check_mode=False,
         mutually_exclusive=[
             ("content", "json"),

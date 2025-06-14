@@ -1,5 +1,97 @@
 ---
-- name: Write running config to startup config as test
+- name: Test exec_and_wait with non-intrusive ping command (execution test only)
+  cisco.radkit.exec_and_wait:
+    device_name: "{{ ios_device_name_1 }}"
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    commands:
+      - "ping 1.1.1.1 repeat 2"
+    prompts: []
+    answers: []
+    seconds_to_wait: 60
+    delay_before_check: 5
+    command_timeout: 30
+  register: ping_result
+
+- name: Verify ping command execution (not success)
+  assert:
+    that:
+      - ping_result is defined
+      - ping_result.changed == true
+      - ping_result.device_name == ios_device_name_1
+      - ping_result.executed_commands | length > 0
+      - "'ping 1.1.1.1 repeat 2' in ping_result.executed_commands"
+      - ping_result.stdout is defined
+      - ping_result.stdout | length > 0
+      # Check that ping command was executed (regardless of success/failure)
+      - "'ping' in ping_result.stdout.lower()"
+    fail_msg: "Ping command execution test failed - command may not have been executed properly"
+    success_msg: "Ping command executed successfully (result doesn't matter)"
+
+- name: Display ping execution results
+  debug:
+    msg: |
+      Ping command execution test completed:
+      Device: {{ ping_result.device_name }}
+      Commands executed: {{ ping_result.executed_commands }}
+      Output contains 'ping': {{ 'ping' in ping_result.stdout.lower() }}
+      Output length: {{ ping_result.stdout | length }}
+
+- name: Test exec_and_wait with simple show command (guaranteed to work)
+  cisco.radkit.exec_and_wait:
+    device_name: "{{ ios_device_name_1 }}"
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    commands:
+      - "show clock"
+    prompts: []
+    answers: []
+    seconds_to_wait: 30
+    delay_before_check: 2
+    command_timeout: 15
+  register: clock_result
+
+- name: Verify show clock command
+  assert:
+    that:
+      - clock_result.changed == true
+      - clock_result.device_name == ios_device_name_1
+      - "'show clock' in clock_result.executed_commands"
+      - clock_result.stdout is defined
+      - clock_result.stdout | length > 0
+      # Clock output should contain time-related keywords
+      - clock_result.stdout.lower() | regex_search('(utc|pdt|pst|est|edt|cdt|cst|mdt|mst|gmt|:|am|pm)')
+    fail_msg: "Show clock command failed"
+    success_msg: "Show clock command executed successfully"
+
+- name: Test exec_and_wait with enhanced parameters
+  cisco.radkit.exec_and_wait:
+    device_name: "{{ ios_device_name_1 }}"
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    commands:
+      - "show ip interface brief"
+    prompts: []
+    answers: []
+    seconds_to_wait: 30
+    delay_before_check: 1
+    command_retries: 2
+    recovery_test_command: "show clock"
+  register: enhanced_result
+
+- name: Verify enhanced parameters test
+  assert:
+    that:
+      - enhanced_result.changed == true
+      - enhanced_result.device_name == ios_device_name_1
+      - "'show ip interface brief' in enhanced_result.executed_commands"
+    fail_msg: "Enhanced parameters test failed"
+    success_msg: "Enhanced parameters test completed successfully"
+
+- name: Write running config to startup config as existing test
   cisco.radkit.exec_and_wait:
     device_name: '{{ ios_device_name_1 }}'
     client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
@@ -23,3 +115,22 @@
 - assert:
     that:
       - "'Building configuration' in cmd_output.stdout"
+
+- name: Summary of all tests
+  debug:
+    msg: |
+      Integration tests completed:
+      ================================
+      ✓ Ping execution test: {{ 'PASSED' if ping_result is succeeded else 'FAILED' }}
+        - Command executed: {{ 'ping 1.1.1.1 repeat 2' in ping_result.executed_commands }}
+        - Output captured: {{ ping_result.stdout | length > 0 }}
+        - Contains 'ping': {{ 'ping' in ping_result.stdout.lower() }}
+      
+      ✓ Show clock test: {{ 'PASSED' if clock_result is succeeded else 'FAILED' }}
+        - Time info found: {{ clock_result.stdout.lower() | regex_search('(utc|pdt|pst|est|edt|cdt|cst|mdt|mst|gmt|:|am|pm)') is not none if clock_result is succeeded else 'N/A' }}
+      
+      ✓ Enhanced parameters test: {{ 'PASSED' if enhanced_result is succeeded else 'FAILED' }}
+      
+      ✓ Existing copy config test: {{ 'PASSED' if cmd_output is succeeded else 'FAILED' }}
+      
+      All tests focus on command execution, not network connectivity results.

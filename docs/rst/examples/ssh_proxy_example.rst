@@ -241,8 +241,8 @@ Comparison with Other Methods
 +------------------+----------------+------------------+-------------------+
 | Port Forward     | Local          | Supported        | Linux Servers     |
 +------------------+----------------+------------------+-------------------+
-| Connection       | On RADKit      | Not Supported    | Legacy (deprecated)|
-| Plugins          |                |                  |                   |
+| Connection       | On RADKit      | Not Supported    | Legacy            |
+| Plugins          |                |                  | (deprecated)      |
 +------------------+----------------+------------------+-------------------+
 
 For more examples, see the `ssh_proxy.yml playbook <https://github.com/cisco-system-traffic-generator/radkit-ansible/blob/main/playbooks/ssh_proxy.yml>`_ in the repository.

@@ -24,14 +24,19 @@ from ansible.plugins.loader import (
 # Import the connection plugin directly
 import sys
 import os
+
 # Go up from tests/unit/plugins/connection to root, then to plugins/connection
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'plugins', 'connection'))
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "..", "plugins", "connection"
+    ),
+)
 from network_cli import Connection as NetworkCliConnection
 
 
 @pytest.fixture(name="conn")
 def plugin_fixture(monkeypatch):
-
     pc = PlayContext()
     pc.network_os = "fakeos"
 
@@ -47,13 +52,13 @@ def plugin_fixture(monkeypatch):
 
     monkeypatch.setattr(terminal_loader, "get", get_terminal)
     monkeypatch.setattr(cliconf_loader, "get", get_cliconf)
-    
+
     # Create the connection directly
     conn = NetworkCliConnection(pc, "/dev/null")
-    
+
     # Set required attributes that would normally be set by the plugin loader
     conn._load_name = "cisco.radkit.network_cli"
-    
+
     return conn
 
 
@@ -79,12 +84,11 @@ def test_network_cli_invalid_os(network_os, monkeypatch):
     with pytest.raises(AnsibleConnectionFailure):
         NetworkCliConnection(pc, "/dev/null")
 
+
 # Removed test_network_cli__connect - configuration issues with plugin options
 
 
-@pytest.mark.parametrize(
-    "command", [json.dumps({"command": "command"})]
-)
+@pytest.mark.parametrize("command", [json.dumps({"command": "command"})])
 def test_network_cli_exec_command(conn, command):
     mock_send = MagicMock(return_value=b"command response")
     conn.send = mock_send

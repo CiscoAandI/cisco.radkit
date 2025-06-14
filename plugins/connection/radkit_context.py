@@ -196,14 +196,16 @@ class RadkitClientContext:
 
     def __init__(self, connection_obj, timeout: Optional[int] = None):
         self.obj = connection_obj
-        
+
         # Get timeout from configuration or use default
         if timeout is None:
             # Try to get from connection options, default to 1 hour instead of 4 hours
             timeout = getattr(connection_obj, "radkit_connection_timeout", None)
             if timeout is None:
                 try:
-                    timeout = connection_obj.get_option("radkit_connection_timeout", 3600)
+                    timeout = connection_obj.get_option(
+                        "radkit_connection_timeout", 3600
+                    )
                 except (AttributeError, KeyError):
                     timeout = 3600
 
@@ -214,7 +216,7 @@ class RadkitClientContext:
                 login_timeout = connection_obj.get_option("radkit_login_timeout", 60)
             except (AttributeError, KeyError):
                 login_timeout = 60
-        
+
         self.timeout = timeout or 3600
         self.login_timeout = login_timeout or 60
 
@@ -252,7 +254,7 @@ class RadkitClientContext:
                 # Add debugging information
                 display.vvv("RADKit context: Starting client creation")
                 self._create_client()
-                
+
                 display.vvv("RADKit context: Starting certificate login")
                 self._perform_login()
 
@@ -260,7 +262,7 @@ class RadkitClientContext:
                 self.obj.radkit_client = self.client
                 self.obj.radkit_client_created = True
                 self.obj.radkit_client_exception = False
-                
+
                 display.vvv("RADKit context: Initialization successful")
 
                 # Update last used time
@@ -268,7 +270,9 @@ class RadkitClientContext:
                 registry.update_last_used(self.connection_key)
 
             except Exception as ex:
-                display.vvv(f"RADKit context: Exception during initialization: {type(ex).__name__}: {ex}")
+                display.vvv(
+                    f"RADKit context: Exception during initialization: {type(ex).__name__}: {ex}"
+                )
                 self._handle_error(ex)
                 raise
 
@@ -296,22 +300,22 @@ class RadkitClientContext:
         identity = self.obj.get_option("radkit_identity")
         service_serial = self.obj.get_option("radkit_service_serial")
         password_b64 = self.obj.get_option("radkit_client_private_key_password_base64")
-        
+
         if not identity:
             raise AnsibleConnectionFailure(
                 "RADKit identity not configured. Set RADKIT_ANSIBLE_IDENTITY or radkit_identity variable."
             )
-        
+
         if not service_serial:
             raise AnsibleConnectionFailure(
                 "RADKit service serial not configured. Set RADKIT_ANSIBLE_SERVICE_SERIAL or radkit_service_serial variable."
             )
-            
+
         if not password_b64:
             raise AnsibleConnectionFailure(
                 "RADKit client private key password not configured. Set RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64."
             )
-        
+
         try:
             # Decode the password
             private_key_password = base64.b64decode(password_b64).decode("utf8")
@@ -375,7 +379,7 @@ class RadkitClientContext:
                         )
                     else:
                         detailed_msg = f"Certificate login failed: {ex}"
-                    
+
                     raise AnsibleConnectionFailure(detailed_msg)
                 else:
                     time.sleep(2**attempt)  # Exponential backoff
@@ -383,10 +387,14 @@ class RadkitClientContext:
     def _handle_error(self, ex: Exception):
         """Handle errors and set appropriate flags on the connection object."""
         self.obj.radkit_client_exception = True
-        
+
         # Provide more detailed error message
-        error_msg = str(ex) if str(ex).strip() else f"Unknown {type(ex).__name__} error occurred"
-        
+        error_msg = (
+            str(ex)
+            if str(ex).strip()
+            else f"Unknown {type(ex).__name__} error occurred"
+        )
+
         # Add more context for common error types
         if isinstance(ex, AnsibleConnectionFailure):
             error_msg = f"Connection failed: {error_msg}"
@@ -396,7 +404,7 @@ class RadkitClientContext:
             error_msg = f"Authentication failed: {error_msg}"
         elif "service" in str(ex).lower() or "serial" in str(ex).lower():
             error_msg = f"Service connection failed: {error_msg}"
-        
+
         self.obj.radkit_client_exception_msg = error_msg
 
         # Clean up on error

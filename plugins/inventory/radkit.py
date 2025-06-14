@@ -190,9 +190,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         """Populate inventory from RADKit service."""
         if not self.inventory:
             return
-            
+
         self.inventory.add_group("radkit_devices")
-        
+
         try:
             # Get configuration options with defaults
             ssh_proxy_mode = self.get_option("ssh_proxy_mode") or False
@@ -200,16 +200,18 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             ssh_proxy_port_overrides = self.get_option("ssh_proxy_port_overrides") or {}
             ansible_host_overrides = self.get_option("ansible_host_overrides") or {}
             ansible_port_overrides = self.get_option("ansible_port_overrides") or {}
-            
+
             # Validate required authentication parameters
-            private_key_password_b64 = self.get_option("radkit_client_private_key_password_base64")
+            private_key_password_b64 = self.get_option(
+                "radkit_client_private_key_password_base64"
+            )
             if not private_key_password_b64:
                 raise AnsibleError("RADKit private key password is required")
-                
+
             identity = self.get_option("radkit_identity")
             if not identity:
                 raise AnsibleError("RADKit identity is required")
-                
+
             service_serial = self.get_option("radkit_service_serial")
             if not service_serial:
                 raise AnsibleError("RADKit service serial is required")
@@ -217,19 +219,25 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             # Use the RADKit client in a context manager (like other modules do)
             with Client.create() as radkit_sync_client:
                 display.v(f"Making a RADKIT certificate_login ... identity={identity}")
-                
+
                 # Perform certificate login
                 radkit_sync_client.certificate_login(
                     identity=identity,
                     ca_path=self.get_option("radkit_client_ca_path"),
                     key_path=self.get_option("radkit_client_key_path"),
                     cert_path=self.get_option("radkit_client_cert_path"),
-                    private_key_password=base64.b64decode(private_key_password_b64).decode("utf8"),
+                    private_key_password=base64.b64decode(
+                        private_key_password_b64
+                    ).decode("utf8"),
                 )
-                
-                display.vvv(f"RADKIT connection successful, connecting to service {service_serial}")
+
+                display.vvv(
+                    f"RADKIT connection successful, connecting to service {service_serial}"
+                )
                 service = radkit_sync_client.service(service_serial).wait()
-                display.vvv(f"Successfully connected to serial {service_serial}, getting inventory...")
+                display.vvv(
+                    f"Successfully connected to serial {service_serial}, getting inventory..."
+                )
 
                 # Get filtered or full inventory
                 if self.get_option("filter_attr") and self.get_option("filter_pattern"):
@@ -239,15 +247,15 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                     )
                 else:
                     inventory = service.inventory
-                    
+
                 # Process each device
                 for item in inventory:
                     device = inventory[item]
                     device_name = device.name
-                    
+
                     # Add host to inventory
                     self.inventory.add_host(device_name, group="radkit_devices")
-                    
+
                     # Set ansible_host - check overrides first, then SSH proxy mode, then device host
                     if device_name in ansible_host_overrides:
                         ansible_host = ansible_host_overrides[device_name]
@@ -255,49 +263,69 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                         ansible_host = "127.0.0.1"
                     else:
                         ansible_host = device.host
-                        
-                    self.inventory.set_variable(device_name, "ansible_host", ansible_host)
-                    
+
+                    self.inventory.set_variable(
+                        device_name, "ansible_host", ansible_host
+                    )
+
                     # Set ansible_port if specified in overrides or SSH proxy mode
                     if device_name in ansible_port_overrides:
                         ansible_port = ansible_port_overrides[device_name]
-                        self.inventory.set_variable(device_name, "ansible_port", ansible_port)
+                        self.inventory.set_variable(
+                            device_name, "ansible_port", ansible_port
+                        )
                     elif ssh_proxy_mode:
                         # Use device-specific SSH proxy port or default
-                        proxy_port = ssh_proxy_port_overrides.get(device_name, ssh_proxy_port)
-                        self.inventory.set_variable(device_name, "ansible_port", proxy_port)
-                    
+                        proxy_port = ssh_proxy_port_overrides.get(
+                            device_name, ssh_proxy_port
+                        )
+                        self.inventory.set_variable(
+                            device_name, "ansible_port", proxy_port
+                        )
+
                     # Set RADKit-specific variables
-                    self.inventory.set_variable(device_name, "radkit_device_type", device.device_type)
-                    self.inventory.set_variable(device_name, "radkit_forwarded_tcp_ports", device.forwarded_tcp_ports)
-                    self.inventory.set_variable(device_name, "radkit_service_serial", service_serial)
+                    self.inventory.set_variable(
+                        device_name, "radkit_device_type", device.device_type
+                    )
+                    self.inventory.set_variable(
+                        device_name,
+                        "radkit_forwarded_tcp_ports",
+                        device.forwarded_tcp_ports,
+                    )
+                    self.inventory.set_variable(
+                        device_name, "radkit_service_serial", service_serial
+                    )
                     self.inventory.set_variable(
                         device_name,
                         "radkit_proxy_dn",
-                        f'{device_name}.{service_serial}.proxy',
+                        f"{device_name}.{service_serial}.proxy",
                     )
-                    
+
                     # Set SSH proxy specific variables if in SSH proxy mode
                     if ssh_proxy_mode:
                         self.inventory.set_variable(
-                            device_name, 
-                            "ansible_user", 
-                            f"{device_name}@{service_serial}"
+                            device_name,
+                            "ansible_user",
+                            f"{device_name}@{service_serial}",
                         )
                         self.inventory.set_variable(
                             device_name,
                             "ansible_ssh_common_args",
-                            "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+                            "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null",
                         )
 
                     # Use constructed features for grouping
                     strict = self.get_option("strict") or False
-                    
+
                     # Create groups based on variable values
-                    host_attr = dict(inventory[item].attributes.internal) if hasattr(inventory[item], 'attributes') else {}
+                    host_attr = (
+                        dict(inventory[item].attributes.internal)
+                        if hasattr(inventory[item], "attributes")
+                        else {}
+                    )
                     # Add device_type to attributes for keyed groups
-                    host_attr['device_type'] = device.device_type
-                    
+                    host_attr["device_type"] = device.device_type
+
                     # Only call if keyed_groups is defined
                     keyed_groups = self.get_option("keyed_groups")
                     if keyed_groups:
@@ -307,11 +335,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                             device_name,
                             strict=strict,
                         )
-            
+
         except Exception as e:
             display.warning(f"Error populating RADKit inventory: {str(e)}")
             display.vvv(traceback.format_exc())
-            raise AnsibleParserError(f'Unable to get hosts from RADKIT: {to_native(e)}')
+            raise AnsibleParserError(f"Unable to get hosts from RADKIT: {to_native(e)}")
 
     def verify_file(self, path):
         """Return the possibly of a file being consumable by this plugin."""
