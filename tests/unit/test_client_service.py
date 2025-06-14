@@ -12,24 +12,44 @@ import base64
 from typing import Any, Dict
 
 # Import the modules we're testing
-import sys
-import os
-
-# Add the correct path for module_utils
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'plugins', 'module_utils'))
-
-from client import (
-    RadkitClientService,
-    radkit_client_argument_spec,
-    create_radkit_client_service,
-    check_if_radkit_version_supported
-)
-from exceptions import (
-    AnsibleRadkitError,
-    AnsibleRadkitConnectionError,
-    AnsibleRadkitValidationError,
-    AnsibleRadkitOperationError
-)
+try:
+    # Try collection import first (for ansible-test environment)
+    from ansible_collections.cisco.radkit.plugins.module_utils.client import (
+        RadkitClientService,
+        radkit_client_argument_spec,
+        create_radkit_client_service,
+        check_if_radkit_version_supported
+    )
+    from ansible_collections.cisco.radkit.plugins.module_utils.exceptions import (
+        AnsibleRadkitError,
+        AnsibleRadkitConnectionError,
+        AnsibleRadkitValidationError,
+        AnsibleRadkitOperationError
+    )
+    # Set the module path for patches when in collection environment
+    CLIENT_MODULE_PATH = 'ansible_collections.cisco.radkit.plugins.module_utils.client'
+except ImportError:
+    # Fallback to direct import for local development
+    import sys
+    import os
+    
+    # Add the correct path for module_utils
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'plugins', 'module_utils'))
+    
+    from client import (
+        RadkitClientService,
+        radkit_client_argument_spec,
+        create_radkit_client_service,
+        check_if_radkit_version_supported
+    )
+    from exceptions import (
+        AnsibleRadkitError,
+        AnsibleRadkitConnectionError,
+        AnsibleRadkitValidationError,
+        AnsibleRadkitOperationError
+    )
+    # Set the module path for patches when in local environment
+    CLIENT_MODULE_PATH = 'client'
 
 
 class TestRadkitClientService(unittest.TestCase):
@@ -53,7 +73,7 @@ class TestRadkitClientService(unittest.TestCase):
             'wait_timeout': 60
         }
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_init_with_valid_params(self, mock_version_check: Mock) -> None:
         """Test successful initialization with valid parameters."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -109,7 +129,7 @@ class TestRadkitClientService(unittest.TestCase):
         
         self.assertIn("Failed to decode client key password", str(cm.exception))
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_get_inventory_by_filter_success(self, mock_version_check: Mock) -> None:
         """Test successful inventory filtering."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -123,7 +143,7 @@ class TestRadkitClientService(unittest.TestCase):
         self.assertEqual(result, mock_inventory)
         service.radkit_service.inventory.filter.assert_called_once_with('attr', 'pattern')
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_get_inventory_by_filter_no_results(self, mock_version_check: Mock) -> None:
         """Test inventory filtering with no results."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -136,7 +156,7 @@ class TestRadkitClientService(unittest.TestCase):
         
         self.assertIn("No devices found", str(cm.exception))
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_exec_command_success(self, mock_version_check: Mock) -> None:
         """Test successful command execution."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -152,7 +172,7 @@ class TestRadkitClientService(unittest.TestCase):
         self.assertEqual(result, "command output")
         mock_inventory.exec.assert_called_once_with('show version', timeout=30)
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_exec_command_with_wait_timeout(self, mock_version_check: Mock) -> None:
         """Test command execution with wait timeout."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -168,7 +188,7 @@ class TestRadkitClientService(unittest.TestCase):
         # Should call wait with timeout since wait_timeout > 0
         mock_inventory.exec.return_value.wait.assert_called_once_with(60)
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_exec_command_return_full_response(self, mock_version_check: Mock) -> None:
         """Test command execution returning full response."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -183,7 +203,7 @@ class TestRadkitClientService(unittest.TestCase):
         
         self.assertEqual(result, mock_response)
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_exec_command_empty_command(self, mock_version_check: Mock) -> None:
         """Test command execution with empty command."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -194,7 +214,7 @@ class TestRadkitClientService(unittest.TestCase):
         
         self.assertIn("Command cannot be empty", str(cm.exception))
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_exec_command_none_inventory(self, mock_version_check: Mock) -> None:
         """Test command execution with None inventory."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -204,7 +224,7 @@ class TestRadkitClientService(unittest.TestCase):
         
         self.assertIn("Inventory cannot be None", str(cm.exception))
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_context_manager(self, mock_version_check: Mock) -> None:
         """Test context manager functionality."""
         with RadkitClientService(self.mock_client, self.valid_params) as service:
@@ -213,7 +233,7 @@ class TestRadkitClientService(unittest.TestCase):
         # After context manager, connection should be cleaned up
         # Note: In real implementation, this would check if close() was called
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_is_connected(self, mock_version_check: Mock) -> None:
         """Test connection status checking."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -226,7 +246,7 @@ class TestRadkitClientService(unittest.TestCase):
         
         self.assertFalse(service.is_connected())
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_validate_connection_success(self, mock_version_check: Mock) -> None:
         """Test connection validation when connected."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -234,7 +254,7 @@ class TestRadkitClientService(unittest.TestCase):
         # Should not raise exception
         service.validate_connection()
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_validate_connection_failure(self, mock_version_check: Mock) -> None:
         """Test connection validation when not connected."""
         service = RadkitClientService(self.mock_client, self.valid_params)
@@ -266,7 +286,7 @@ class TestUtilityFunctions(unittest.TestCase):
             self.assertIn(field, spec)
             self.assertFalse(spec[field]['required'])
 
-    @patch('client.check_if_radkit_version_supported')
+    @patch(f'{CLIENT_MODULE_PATH}.check_if_radkit_version_supported')
     def test_create_radkit_client_service(self, mock_version_check: Mock) -> None:
         """Test factory function for creating service."""
         mock_client = Mock()

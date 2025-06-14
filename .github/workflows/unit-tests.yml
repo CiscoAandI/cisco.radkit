@@ -107,8 +107,11 @@ jobs:
           # Run pytest as fallback - this is our primary test method
           cd ~/.ansible/collections/ansible_collections/cisco/radkit
           mkdir -p tests/output/junit
+          # Set PYTHONPATH to ensure proper imports
+          export PYTHONPATH="$PWD:$PYTHONPATH"
           python -m pytest tests/unit/ -v --cov=plugins --cov-report=xml --cov-report=term-missing \
-            --junit-xml=./tests/output/junit/python${{ matrix.python-version }}-pytest-units.xml
+            --junit-xml=./tests/output/junit/python${{ matrix.python-version }}-pytest-units.xml \
+            --tb=short
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11' && matrix.ansible-version == 'ansible>=8.0.0,<9.0.0'
