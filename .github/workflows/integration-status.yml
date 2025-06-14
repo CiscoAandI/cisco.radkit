@@ -84,7 +84,7 @@ jobs:
                 echo "    ✅ Has tasks/main.yml"
               fi
               
-              ((target_count++))
+              target_count=$((target_count + 1))
             fi
           done
           
@@ -94,4 +94,6 @@ jobs:
           if [ $target_count -eq 0 ]; then
             echo "❌ No integration test targets found"
             exit 1
+          else
+            echo "✅ Integration test targets validation passed"
           fi

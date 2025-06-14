@@ -2,6 +2,9 @@
 - name: Write running config to startup config as test
   cisco.radkit.exec_and_wait:
     device_name: '{{ ios_device_name_1 }}'
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
     commands:
       - "show clock"
       - "copy running-config startup-config"

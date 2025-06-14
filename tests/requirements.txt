@@ -1,6 +1,3 @@
 ansible-core>=2.12.0
 pytest>=6.0
-pytest-xdist
-pytest-forked  
 pytest-mock
-pytest-ansible

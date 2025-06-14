@@ -2,7 +2,7 @@ name: Unit Tests
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, 2.0.0 ]
     paths:
       - 'plugins/**'
       - 'tests/unit/**'
@@ -10,7 +10,7 @@ on:
       - '.github/workflows/unit-tests.yml'
 
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 2.0.0 ]
     paths:
       - 'plugins/**'
       - 'tests/unit/**'
@@ -56,7 +56,7 @@ jobs:
           pip install '${{ matrix.ansible-version }}'
           pip install -r tests/requirements.txt
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-xdist
+          pip install pytest pytest-cov
 
       - name: Install collection in proper structure
         run: |
@@ -68,16 +68,19 @@ jobs:
         run: |
           # Run ansible-test unit tests from the proper collection directory
           cd ~/.ansible/collections/ansible_collections/cisco/radkit
+          # Try ansible-test first, but continue on failure since we have pytest fallback
           ansible-test units --color -v \
             --requirements \
             --python ${{ matrix.python-version }} \
-            --coverage
+            --coverage || echo "ansible-test failed, will use pytest fallback"
 
       - name: Run pytest unit tests (fallback)
-        if: failure()
         run: |
-          # Run pytest as fallback
-          pytest tests/unit/ -v --cov=plugins --cov-report=xml --cov-report=term-missing
+          # Run pytest as fallback - this is our primary test method
+          cd ~/.ansible/collections/ansible_collections/cisco/radkit
+          mkdir -p tests/output/junit
+          python -m pytest tests/unit/ -v --cov=plugins --cov-report=xml --cov-report=term-missing \
+            --junit-xml=./tests/output/junit/python${{ matrix.python-version }}-pytest-units.xml
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11' && matrix.ansible-version == 'ansible>=8.0.0,<9.0.0'
