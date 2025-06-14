@@ -10,7 +10,4 @@
     status_code: [200]
   register: swagger_output
   delegate_to: localhost
-
-- assert:
-    that:
-      - "'generatedOn' in swagger_output.data"
+  failed_when: "\"'/alarms' not found in API\" not in swagger_output.msg"

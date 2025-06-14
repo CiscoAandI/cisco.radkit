@@ -178,6 +178,21 @@ def _validate_status_code(actual_code: int, expected_codes: List[int]) -> None:
         )
 
 
+def _validate_swagger_path(device: Any, path: str, device_name: str) -> None:
+    """Validate that the Swagger path exists in the device's API specification."""
+    try:
+        # Check if the path exists in the swagger paths
+        if hasattr(device.swagger, 'paths') and path not in device.swagger.paths:
+            available_paths = list(device.swagger.paths.keys()) if hasattr(device.swagger, 'paths') else []
+            raise AnsibleRadkitValidationError(
+                f"Swagger path '{path}' not found in API specification for device '{device_name}'. "
+                f"Available paths: {available_paths[:10]}{'...' if len(available_paths) > 10 else ''}"
+            )
+    except AttributeError:
+        # If we can't check paths, we'll let the actual API call handle the error
+        logger.debug(f"Could not validate Swagger path '{path}' - proceeding with API call")
+
+
 def run_action(
     module: AnsibleModule, radkit_service: RadkitClientService
 ) -> Tuple[Dict[str, Any], bool]:
@@ -197,9 +212,9 @@ def run_action(
         AnsibleRadkitOperationError: For API operation failures
     """
     try:
-        params = module.params
-        device_name = params["device_name"]
-        method = params["method"]
+        params: Dict[str, Any] = module.params
+        device_name: str = params["device_name"]
+        method: str = params["method"]
 
         # Validate HTTP method
         _validate_http_method(method)
@@ -217,24 +232,37 @@ def run_action(
         logger.debug(f"Updating Swagger paths for device {device_name}")
         device.update_swagger().wait()
 
+        # Validate that the path exists in the Swagger specification
+        path = params["path"]
+        _validate_swagger_path(device, path, device_name)
+
         # Prepare API call parameters
-        swagger_params = _prepare_swagger_params(params)
+        swagger_params = _prepare_swagger_params(dict(params))
 
         # Get the appropriate HTTP method function
         swagger_func = getattr(device.swagger, method.lower())
 
         # Execute the Swagger API call
-        logger.debug(f"Executing {method.upper()} request to {params['path']}")
+        logger.debug(f"Executing {method.upper()} request to {params.get('path')}")
         radkit_response = swagger_func(**swagger_params).wait()
 
         # Process response
         results = _process_swagger_response(radkit_response, method)
 
         # Validate status code
-        _validate_status_code(results["status_code"], params["status_code"])
+        expected_codes: List[int] = params["status_code"]
+        _validate_status_code(results["status_code"], expected_codes)
 
         return results, False
 
+    except KeyError as e:
+        # Handle case where Swagger path is not found in the API specification
+        path = params.get('path', 'unknown')
+        logger.error(f"Swagger path '{path}' not found in API specification for device {device_name}")
+        raise AnsibleRadkitValidationError(
+            f"Swagger path '{path}' not found in API specification for device '{device_name}'. "
+            f"Please verify the path exists in the device's Swagger documentation."
+        )
     except (
         AnsibleRadkitConnectionError,
         AnsibleRadkitValidationError,
@@ -244,7 +272,11 @@ def run_action(
         return {"msg": str(e), "changed": False}, True
     except Exception as e:
         logger.error(f"Unexpected error in swagger module: {e}")
-        return {"msg": f"Unexpected error: {str(e)}", "changed": False}, True
+        # print traceback for debugging
+        import traceback
+        # get the traceback as a string
+        tb_str = traceback.format_exc()
+        return {"msg": f"Unexpected error: {str(tb_str)}", "changed": False}, True
 
 
 def main() -> None:
