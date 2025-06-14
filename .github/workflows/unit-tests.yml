@@ -25,12 +25,40 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-        ansible-version:
-          - 'ansible>=6.0.0,<7.0.0'  # ansible-core 2.13
-          - 'ansible>=7.0.0,<8.0.0'  # ansible-core 2.14
-          - 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
-          - 'ansible>=10.0.0,<11.0.0'
+        include:
+          # Python 3.9 - supports older Ansible versions
+          - python-version: '3.9'
+            ansible-version: 'ansible>=6.0.0,<7.0.0'  # ansible-core 2.13
+          - python-version: '3.9'
+            ansible-version: 'ansible>=7.0.0,<8.0.0'  # ansible-core 2.14
+          - python-version: '3.9'
+            ansible-version: 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
+          
+          # Python 3.10 - supports all versions
+          - python-version: '3.10'
+            ansible-version: 'ansible>=6.0.0,<7.0.0'  # ansible-core 2.13
+          - python-version: '3.10'
+            ansible-version: 'ansible>=7.0.0,<8.0.0'  # ansible-core 2.14
+          - python-version: '3.10'
+            ansible-version: 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
+          - python-version: '3.10'
+            ansible-version: 'ansible>=10.0.0,<11.0.0'  # ansible-core 2.17
+          
+          # Python 3.11 - supports all versions
+          - python-version: '3.11'
+            ansible-version: 'ansible>=6.0.0,<7.0.0'  # ansible-core 2.13
+          - python-version: '3.11'
+            ansible-version: 'ansible>=7.0.0,<8.0.0'  # ansible-core 2.14
+          - python-version: '3.11'
+            ansible-version: 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
+          - python-version: '3.11'
+            ansible-version: 'ansible>=10.0.0,<11.0.0'  # ansible-core 2.17
+          
+          # Python 3.12 - supports newer versions
+          - python-version: '3.12'
+            ansible-version: 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
+          - python-version: '3.12'
+            ansible-version: 'ansible>=10.0.0,<11.0.0'  # ansible-core 2.17
 
     steps:
       - name: Checkout repository
