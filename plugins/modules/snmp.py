@@ -22,10 +22,11 @@ module: snmp
 short_description: Perform SNMP operations via RADKit
 version_added: "0.5.0"
 description:
-  - Executes SNMP GET and WALK operations through RADKit infrastructure
+  - Executes SNMP GET, WALK, GET_NEXT, and GET_BULK operations through RADKit infrastructure
   - Supports both device name and host-based device identification
-  - Provides configurable timeouts and comprehensive error handling
-  - Returns structured SNMP response data for automation workflows
+  - Supports multiple OIDs in a single request for efficient bulk operations
+  - Provides configurable timeouts, retries, limits, and concurrency settings
+  - Returns structured SNMP response data with comprehensive error handling
   - Ideal for network monitoring, device discovery, and configuration management
 options:
     device_name:
@@ -40,19 +41,61 @@ options:
         type: str
     oid:
         description:
-            - SNMP OID
+            - SNMP OID or list of OIDs to query
+            - Can be dot-separated strings like "1.3.6.1.2.1.1.1.0" or tuple of integers
+            - Multiple OIDs can be provided for bulk operations
         required: True
-        type: str
+        type: raw
     action:
         description:
-            - Action to run on SNMP API. Supports either get or walk
+            - Action to run on SNMP API
+            - get - Get specific OID values
+            - walk - Walk OID tree (GETNEXT for SNMPv1, GETBULK for SNMPv2+)
+            - get_next - Get next OID values after specified OIDs
+            - get_bulk - Get multiple values after each OID (SNMPv2+ only)
         default: get
         type: str
+        choices: ['get', 'walk', 'get_next', 'get_bulk']
     request_timeout:
         description:
-            - Timeout for individual SNMP requests
+            - Timeout for individual SNMP requests in seconds
         default: 10
         type: float
+    limit:
+        description:
+            - Maximum number of OIDs to look up in one request (get/get_next)
+            - Maximum number of SNMP entries to fetch in one request (walk)
+            - Number of SNMP entries to get after each OID (get_bulk)
+        required: False
+        type: int
+    retries:
+        description:
+            - How many times to retry SNMP requests if they timeout
+        required: False
+        type: int
+    concurrency:
+        description:
+            - Maximum number of queries to fetch at once (walk/get_bulk only)
+        default: 100
+        type: int
+    include_errors:
+        description:
+            - Include error rows in the output
+        default: False
+        type: bool
+    include_mib_info:
+        description:
+            - Include MIB information (labels, modules, variables) in output
+        default: False
+        type: bool
+    output_format:
+        description:
+            - Format of the output data
+            - simple - Basic OID and value pairs
+            - detailed - Include all available SNMP row information
+        default: simple
+        type: str
+        choices: ['simple', 'detailed']
 extends_documentation_fragment: cisco.radkit.radkit_client
 requirements:
     - radkit
@@ -61,16 +104,119 @@ author: Scott Dozier (@scdozier)
 
 RETURN = r"""
 data:
-    description: SNMP Response
+    description: SNMP Response data containing OID values and metadata
     returned: success
     type: list
+    elements: dict
+    contains:
+        device_name:
+            description: Name of the device that responded
+            type: str
+            sample: "router1"
+        oid:
+            description: The SNMP OID as a dot-separated string
+            type: str
+            sample: "1.3.6.1.2.1.1.1.0"
+        value:
+            description: The SNMP value returned
+            type: raw
+            sample: "Cisco IOS Software"
+        type:
+            description: ASN.1 type of the SNMP value (only in detailed format)
+            type: str
+            sample: "OctetString"
+            returned: when output_format is detailed
+        value_str:
+            description: String representation of the value (only in detailed format)
+            type: str
+            sample: "Cisco IOS Software"
+            returned: when output_format is detailed
+        is_error:
+            description: Whether this row contains an error (only in detailed format)
+            type: bool
+            sample: false
+            returned: when output_format is detailed
+        error_code:
+            description: SNMP error code if is_error is true (only in detailed format)
+            type: int
+            sample: 0
+            returned: when output_format is detailed and is_error is true
+        error_str:
+            description: SNMP error string if is_error is true (only in detailed format)
+            type: str
+            sample: "noSuchName"
+            returned: when output_format is detailed and is_error is true
+        label:
+            description: MIB-resolved object ID (only when include_mib_info is true)
+            type: str
+            sample: "iso.org.dod.internet.mgmt.mib-2.system.sysDescr"
+            returned: when include_mib_info is true
+        mib_module:
+            description: MIB module name (only when include_mib_info is true)
+            type: str
+            sample: "SNMPv2-MIB"
+            returned: when include_mib_info is true
+        mib_variable:
+            description: MIB variable name (only when include_mib_info is true)
+            type: str
+            sample: "sysDescr"
+            returned: when include_mib_info is true
+        mib_str:
+            description: Full MIB string representation (only when include_mib_info is true)
+            type: str
+            sample: "SNMPv2-MIB::sysDescr.0"
+            returned: when include_mib_info is true
 """
 EXAMPLES = """
-    - name:  SNMP Walk device
+    - name: Simple SNMP Get
       cisco.radkit.snmp:
         device_name: router1
-        oid: 1.3.6.1.2.1.1
+        oid: "1.3.6.1.2.1.1.1.0"
+        action: get
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: SNMP Walk with detailed output
+      cisco.radkit.snmp:
+        device_name: router1
+        oid: "1.3.6.1.2.1.1"
         action: walk
+        output_format: detailed
+        include_mib_info: true
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: Multiple OID Get with error handling
+      cisco.radkit.snmp:
+        device_host: "192.168.1.1"
+        oid:
+          - "1.3.6.1.2.1.1.1.0"
+          - "1.3.6.1.2.1.1.2.0"
+          - "1.3.6.1.2.1.1.3.0"
+        action: get
+        include_errors: true
+        retries: 3
+        request_timeout: 15
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: SNMP Get Next
+      cisco.radkit.snmp:
+        device_name: switch1
+        oid: "1.3.6.1.2.1.2.2.1.1"
+        action: get_next
+        limit: 10
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: SNMP Get Bulk (SNMPv2+ only)
+      cisco.radkit.snmp:
+        device_name: router1
+        oid: "1.3.6.1.2.1.2.2.1"
+        action: get_bulk
+        limit: 20
+        concurrency: 50
+        request_timeout: 30
       register: snmp_output
       delegate_to: localhost
 """
@@ -97,8 +243,10 @@ from ansible_collections.cisco.radkit.plugins.module_utils.exceptions import (
 )
 
 # Constants for SNMP operations
-VALID_SNMP_ACTIONS = ["get", "walk"]
+VALID_SNMP_ACTIONS = ["get", "walk", "get_next", "get_bulk"]
 DEFAULT_REQUEST_TIMEOUT = 10.0
+DEFAULT_CONCURRENCY = 100
+VALID_OUTPUT_FORMATS = ["simple", "detailed"]
 
 # Setup module logger
 logger = logging.getLogger(__name__)
@@ -118,6 +266,43 @@ def _validate_snmp_action(action: str) -> None:
     if action.lower() not in VALID_SNMP_ACTIONS:
         raise AnsibleRadkitValidationError(
             f"Action '{action}' is not valid. Must be one of: {', '.join(VALID_SNMP_ACTIONS)}"
+        )
+
+
+def _normalize_oids(oids: Union[str, List[str]]) -> List[str]:
+    """Normalize OID input to a list of strings.
+
+    Args:
+        oids: Single OID string or list of OID strings
+
+    Returns:
+        List of OID strings
+
+    Raises:
+        AnsibleRadkitValidationError: If OID format is invalid
+    """
+    if isinstance(oids, str):
+        return [oids]
+    elif isinstance(oids, list):
+        return oids
+    else:
+        raise AnsibleRadkitValidationError(
+            f"OID must be a string or list of strings, got {type(oids)}"
+        )
+
+
+def _validate_output_format(output_format: str) -> None:
+    """Validate the output format parameter.
+
+    Args:
+        output_format: The output format to validate
+
+    Raises:
+        AnsibleRadkitValidationError: If format is not valid
+    """
+    if output_format.lower() not in VALID_OUTPUT_FORMATS:
+        raise AnsibleRadkitValidationError(
+            f"Output format '{output_format}' is not valid. Must be one of: {', '.join(VALID_OUTPUT_FORMATS)}"
         )
 
 
@@ -167,15 +352,30 @@ def _get_device_inventory(
 
 
 def _execute_snmp_operation(
-    inventory: Dict[str, Any], action: str, oid: str, timeout: float
+    inventory: Dict[str, Any], 
+    action: str, 
+    oids: List[str], 
+    timeout: float,
+    limit: Optional[int] = None,
+    retries: Optional[int] = None,
+    concurrency: int = DEFAULT_CONCURRENCY,
+    include_errors: bool = False,
+    include_mib_info: bool = False,
+    output_format: str = "simple"
 ) -> List[Dict[str, Union[str, Any]]]:
     """Execute SNMP operation on device.
 
     Args:
         inventory: Device inventory dictionary
-        action: SNMP action (get or walk)
-        oid: SNMP OID to query
+        action: SNMP action (get, walk, get_next, get_bulk)
+        oids: List of SNMP OIDs to query
         timeout: Request timeout in seconds
+        limit: Maximum number of entries per request
+        retries: Number of retry attempts
+        concurrency: Maximum concurrent queries
+        include_errors: Whether to include error rows
+        include_mib_info: Whether to include MIB information
+        output_format: Output format ('simple' or 'detailed')
 
     Returns:
         List of SNMP result dictionaries
@@ -188,23 +388,64 @@ def _execute_snmp_operation(
     for device_name in inventory:
         try:
             logger.info(
-                f"Executing SNMP {action} on device {device_name} for OID {oid}"
+                f"Executing SNMP {action} on device {device_name} for OIDs {oids}"
             )
 
             # Get the appropriate SNMP function
             snmp_func = getattr(inventory[device_name].snmp, action.lower())
 
-            # Execute SNMP operation
-            snmp_results = snmp_func(oid, timeout=timeout).wait().result
+            # Build function arguments
+            kwargs = {}
+            if timeout is not None:
+                kwargs['timeout'] = timeout
+            if limit is not None:
+                kwargs['limit'] = limit
+            if retries is not None:
+                kwargs['retries'] = retries
+            if action.lower() in ['walk', 'get_bulk'] and concurrency is not None:
+                kwargs['concurrency'] = concurrency
 
-            # Process results
-            for row in snmp_results:
-                return_data.append(
-                    {
-                        "oid": snmp_results[row].oid_str,
-                        "value": snmp_results[row].value,
-                    }
-                )
+            # Execute SNMP operation
+            if len(oids) == 1:
+                snmp_results = snmp_func(oids[0], **kwargs).wait().result
+            else:
+                snmp_results = snmp_func(oids, **kwargs).wait().result
+
+            # Process results based on output format
+            if include_errors:
+                results_to_process = snmp_results
+            else:
+                results_to_process = snmp_results.without_errors()
+
+            for row in results_to_process:
+                result_dict = {
+                    "device_name": device_name,
+                    "oid": results_to_process[row].oid_str,
+                    "value": results_to_process[row].value,
+                }
+
+                if output_format == "detailed":
+                    result_dict.update({
+                        "type": results_to_process[row].type,
+                        "value_str": results_to_process[row].value_str,
+                        "is_error": results_to_process[row].is_error,
+                    })
+
+                    if results_to_process[row].is_error:
+                        result_dict.update({
+                            "error_code": results_to_process[row].error_code,
+                            "error_str": results_to_process[row].error_str,
+                        })
+
+                    if include_mib_info:
+                        result_dict.update({
+                            "label": results_to_process[row].label_str,
+                            "mib_module": results_to_process[row].mib_module,
+                            "mib_variable": results_to_process[row].mib_variable,
+                            "mib_str": results_to_process[row].mib_str,
+                        })
+
+                return_data.append(result_dict)
 
             logger.info(
                 f"Successfully executed SNMP {action} on {device_name}, got {len(return_data)} results"
@@ -238,18 +479,39 @@ def run_action(
         params = module.params
         device_name = params.get("device_name")
         device_host = params.get("device_host")
-        action = params["action"]
-        oid = params["oid"]
-        timeout = params["request_timeout"]
+        action = params.get("action", "get")
+        oid_input = params.get("oid")
+        timeout = params.get("request_timeout", DEFAULT_REQUEST_TIMEOUT)
+        limit = params.get("limit")
+        retries = params.get("retries")
+        concurrency = params.get("concurrency", DEFAULT_CONCURRENCY)
+        include_errors = params.get("include_errors", False)
+        include_mib_info = params.get("include_mib_info", False)
+        output_format = params.get("output_format", "simple")
 
         # Validate inputs
         _validate_snmp_action(action)
+        _validate_output_format(output_format)
+        
+        # Normalize OIDs to list
+        oids = _normalize_oids(oid_input)
 
         # Get device inventory
         inventory = _get_device_inventory(radkit_service, device_name, device_host)
 
         # Execute SNMP operation
-        snmp_data = _execute_snmp_operation(inventory, action, oid, timeout)
+        snmp_data = _execute_snmp_operation(
+            inventory=inventory,
+            action=action,
+            oids=oids,
+            timeout=timeout,
+            limit=limit,
+            retries=retries,
+            concurrency=concurrency,
+            include_errors=include_errors,
+            include_mib_info=include_mib_info,
+            output_format=output_format
+        )
 
         return {"data": snmp_data, "changed": False}, False
 
@@ -277,8 +539,14 @@ def main() -> None:
             "device_name": {"type": "str", "required": False},
             "device_host": {"type": "str", "required": False},
             "action": {"type": "str", "default": "get", "choices": VALID_SNMP_ACTIONS},
-            "oid": {"type": "str", "required": True},
+            "oid": {"type": "raw", "required": True},
             "request_timeout": {"type": "float", "default": DEFAULT_REQUEST_TIMEOUT},
+            "limit": {"type": "int", "required": False},
+            "retries": {"type": "int", "required": False},
+            "concurrency": {"type": "int", "default": DEFAULT_CONCURRENCY},
+            "include_errors": {"type": "bool", "default": False},
+            "include_mib_info": {"type": "bool", "default": False},
+            "output_format": {"type": "str", "default": "simple", "choices": VALID_OUTPUT_FORMATS},
         }
     )
 
