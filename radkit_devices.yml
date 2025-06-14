@@ -1,74 +1,134 @@
 # Enhanced RADKit Ansible Inventory Configuration
-# This file demonstrates the new features including SSH proxy support
-# and host/port overrides for the cisco.radkit.radkit inventory plugin
+# This file demonstrates the cisco.radkit.radkit inventory plugin features
+# including SSH proxy support and host/port overrides
 
 plugin: cisco.radkit.radkit
 strict: False
 
-# SSH Proxy Mode Configuration
-# When enabled, all devices will use 127.0.0.1 as ansible_host and connect through SSH proxy
+# =============================================================================
+# SSH PROXY CONFIGURATION
+# =============================================================================
+# SSH Proxy Mode - When enabled, all devices will use 127.0.0.1 as ansible_host
+# This is useful when connecting through ssh_proxy module which creates local tunnels
 ssh_proxy_mode: False
-ssh_proxy_port: 2222
+ssh_proxy_port: 2222  # Default SSH proxy port
 
-# Host and Port Override Examples
-# These allow specific devices to use different connection settings
-ansible_host_overrides:
-  # Override specific devices to use different hosts (useful for special cases)
-  # special_device: "192.168.1.100"
-  
-ansible_port_overrides:
-  # Override specific devices to use different ports
-  # router1: 2223
-  # router2: 2224
-  
+# Device-specific SSH proxy port overrides
+# Use when different devices need different proxy ports
 ssh_proxy_port_overrides:
-  # Override SSH proxy ports for specific devices
   # router1: 2223
-  # router2: 2224
+  # switch1: 2224
+  # server1: 2225
 
-# Device Grouping Configuration
+# =============================================================================
+# HOST AND PORT OVERRIDES 
+# =============================================================================
+# Override ansible_host for specific devices (takes precedence over ssh_proxy_mode)
+ansible_host_overrides:
+  # Direct connection examples:
+  # mgmt_device: "192.168.1.100"
+  # backup_device: "10.0.0.50"
+  
+  # SSH proxy examples (use with ssh_proxy module):
+  # proxy_router1: "127.0.0.1"
+  # proxy_switch1: "127.0.0.1"
+
+# Override ansible_port for specific devices
+ansible_port_overrides:
+  # SSH examples:
+  # router1: 22
+  # alt_ssh_device: 2222
+  
+  # Custom port examples:
+  # telnet_device: 23
+  # web_device: 8080
+
+# =============================================================================
+# DEVICE GROUPING AND ORGANIZATION
+# =============================================================================
 keyed_groups:
-  # Group devices based on device type (ex: radkit_device_type_IOS)
+  # Group by device type (creates groups like: radkit_device_type_IOS)
   - prefix: radkit_device_type
     key: 'device_type'
-  # Group devices based on description
+    
+  # Group by description keywords
   - prefix: radkit_description
     key: 'description'
-  # Create SSH proxy specific groups
-  - prefix: radkit_ssh_proxy
+    
+  # Group by connection method  
+  - prefix: radkit_connection
+    key: 'connection_method | default("unknown")'
+    
+  # Group SSH proxy devices
+  - prefix: radkit_proxy
     key: 'device_type'
     separator: '_'
+    trailing_separator: False
 
-# Compose additional variables for SSH proxy usage
+# =============================================================================
+# VARIABLE COMPOSITION
+# =============================================================================
 compose:
-  # Set ansible_user for SSH proxy format: device@service_serial
+  # For SSH proxy connections: set user as device@service_serial
   ansible_user: inventory_hostname + '@' + radkit_service_serial
-  # Set SSH connection args for proxy (disable host key checking)
-  ansible_ssh_common_args: "'-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
+  
+  # SSH connection arguments for proxy connections
+  ansible_ssh_common_args: >-
+    '-o StrictHostKeyChecking=no 
+     -o UserKnownHostsFile=/dev/null 
+     -o ConnectTimeout=10'
+  
+  # Set connection timeout
+  ansible_connection_timeout: 30
+  
+  # Determine if device uses SSH proxy
+  uses_ssh_proxy: >-
+    {{ 
+      ssh_proxy_mode or 
+      (inventory_hostname in (ansible_host_overrides | default({}))) and 
+      (ansible_host_overrides[inventory_hostname] == "127.0.0.1")
+    }}
 
-# Optional: Filter devices by attribute and pattern
-# Uncomment these to filter the inventory
+# =============================================================================
+# FILTERING OPTIONS
+# =============================================================================
+# Uncomment to filter devices by specific criteria:
 # filter_attr: 'device_type'
 # filter_pattern: 'IOS'
 
-# Example usage scenarios:
+# =============================================================================
+# USAGE EXAMPLES
+# =============================================================================
 #
-# 1. Basic SSH Proxy Mode (all devices through proxy):
+# 1. SSH PROXY MODE (all devices through ssh_proxy):
 #    ssh_proxy_mode: True
 #    ssh_proxy_port: 2222
+#    
+#    Result: All devices get:
+#    - ansible_host: "127.0.0.1"
+#    - ansible_port: 2222 (or device-specific override)
+#    - ansible_user: "device_name@service_serial"
 #
-# 2. Mixed Mode (some devices direct, some through proxy):
+# 2. MIXED MODE (some direct, some proxy):
 #    ssh_proxy_mode: False
 #    ansible_host_overrides:
-#      proxy_device1: "127.0.0.1"
-#      proxy_device2: "127.0.0.1"
+#      router1: "127.0.0.1"      # Use SSH proxy
+#      router2: "192.168.1.10"   # Direct connection
 #    ansible_port_overrides:
-#      proxy_device1: 2223
-#      proxy_device2: 2224
+#      router1: 2223             # Custom proxy port
+#      router2: 22               # Standard SSH
 #
-# 3. Port Forwarding Support:
+# 3. PORT FORWARDING SETUP:
 #    ssh_proxy_mode: False
 #    ansible_host_overrides:
-#      linux_server1: "127.0.0.1"
+#      web_server: "127.0.0.1"
 #    ansible_port_overrides:
-#      linux_server1: 2225
+#      web_server: 8080          # Local forwarded port
+#
+# 4. ORGANIZATIONAL GROUPING:
+#    With the keyed_groups above, devices are automatically grouped:
+#    - radkit_device_type_IOS: All IOS devices
+#    - radkit_device_type_LINUX: All Linux devices
+#    - radkit_description_router: Devices with "router" in description
+#
+# =============================================================================
