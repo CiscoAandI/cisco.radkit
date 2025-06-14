@@ -2,6 +2,12 @@
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+"""
+Documentation fragment for persistent connection options.
+
+This module provides common documentation for persistent connection plugins.
+"""
+
 from __future__ import absolute_import, division, print_function
 
 

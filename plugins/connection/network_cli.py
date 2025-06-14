@@ -1,3 +1,12 @@
+"""
+RADKit Network CLI Connection Plugin for Ansible.
+
+DEPRECATED: This connection plugin is deprecated as of v2.0.0.
+Use ssh_proxy module with standard ansible.netcommon.network_cli connection instead.
+This provides better compatibility, security, and easier configuration.
+See ssh_proxy module documentation for migration instructions.
+"""
+
 # (c) 2016 Red Hat Inc.
 # (c) 2017 Ansible Project
 # GNU General Public License v3.0+ (see LICENSES/GPL-3.0-or-later.txt or https://www.gnu.org/licenses/gpl-3.0.txt)

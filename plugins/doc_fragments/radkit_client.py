@@ -1,3 +1,11 @@
+"""
+Documentation fragment for RADKit client configuration options.
+
+This module provides common documentation for RADKit client authentication
+and connection parameters used across RADKit plugins.
+"""
+
+
 class ModuleDocFragment(object):
     DOCUMENTATION = """
 options:

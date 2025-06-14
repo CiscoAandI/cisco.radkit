@@ -30,7 +30,7 @@ jobs:
           - 'ansible>=6.0.0,<7.0.0'  # ansible-core 2.13
           - 'ansible>=7.0.0,<8.0.0'  # ansible-core 2.14
           - 'ansible>=8.0.0,<9.0.0'  # ansible-core 2.15
-          - 'ansible>=10.0.0,11.0.0'
+          - 'ansible>=10.0.0,<11.0.0'
 
     steps:
       - name: Checkout repository

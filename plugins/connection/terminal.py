@@ -1,3 +1,12 @@
+"""
+RADKit Terminal Connection Plugin for Ansible.
+
+DEPRECATED: This connection plugin is deprecated as of v2.0.0.
+Use port_forward module for Linux servers instead of this terminal connection.
+Port forwarding provides better file transfer support (SCP/SFTP) required by most Ansible modules.
+For network devices, use ssh_proxy module with ansible.netcommon.network_cli connection.
+"""
+
 # (c) 2012, Michael DeHaan <michael.dehaan@gmail.com>
 # (c) 2017 Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)

@@ -72,12 +72,14 @@ jobs:
             echo "Documentation build failed - index.html not found"
             echo "Listing docs directory contents:"
             ls -la docs/
+            echo "Checking for build artifacts:"
+            find docs/ -name "*.html" -o -name "index.*" | head -10
             exit 1
           fi
           
           echo "✅ Documentation build successful!"
           echo "📄 Built files:"
-          ls -la docs/*.html docs/*.js 2>/dev/null || echo "No HTML/JS files found"
+          ls -la docs/*.html 2>/dev/null | head -5 || echo "No HTML files found in docs root"
 
       - name: Upload documentation artifacts
         uses: actions/upload-artifact@v4
