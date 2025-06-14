@@ -1,0 +1,30 @@
+---
+- name: Test exec_and_wait with empty prompts fix
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Test ping command with empty prompts
+      cisco.radkit.exec_and_wait:
+        device_name: "daa-csr2"
+        client_key_password_b64: "Q2lzYzAxMjMh"
+        identity: "scdozier@cisco.com"
+        service_serial: "tkj9-0881-7p1j"
+        commands:
+          - "ping 1.1.1.1 repeat 2"
+        prompts: []  # Empty prompts should now work correctly
+        answers: []
+        seconds_to_wait: 30
+        delay_before_check: 2
+        command_timeout: 20
+      register: ping_result
+      failed_when: false
+
+    - name: Display results
+      debug:
+        msg: |
+          Ping test result:
+          Status: {{ ping_result.exec_status | default('SUCCESS') }}
+          Commands executed: {{ ping_result.executed_commands | default([]) }}
+          Output length: {{ ping_result.stdout | default('') | length }}
+          Changed: {{ ping_result.changed | default(false) }}

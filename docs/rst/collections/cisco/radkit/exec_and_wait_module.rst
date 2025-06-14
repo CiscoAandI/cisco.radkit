@@ -22,7 +22,7 @@ cisco.radkit.exec_and_wait module -- Executes commands on devices using RADKit a
 .. Collection note
 
 .. note::
-    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 1.8.1).
+    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 2.0.0).
 
     It is not included in ``ansible-core``.
     To check whether it is installed, run :code:`ansible-galaxy collection list`.
@@ -52,6 +52,7 @@ Synopsis
 .. Description
 
 - This module runs commands on specified devices using RADKit, handling interactive prompts with pexpect.
+- Enhanced with retry logic, progress monitoring, and better error handling.
 
 
 .. Aliases
@@ -66,6 +67,7 @@ Requirements
 The below requirements are needed on the host that executes this module.
 
 - radkit
+- pexpect
 
 
 
@@ -265,6 +267,44 @@ Parameters
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-command_retries"></div>
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__parameter-command_retries:
+
+      .. rst-class:: ansible-option-title
+
+      **command_retries**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-command_retries" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Maximum number of retries for command execution failures.
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-default-bold:`Default:` :ansible-option-default:`1`
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="parameter-command_timeout"></div>
 
       .. _ansible_collections.cisco.radkit.exec_and_wait_module__parameter-command_timeout:
@@ -328,6 +368,48 @@ Parameters
         <div class="ansible-option-cell">
 
       List of commands to execute on the device.
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-continue_on_device_failure"></div>
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__parameter-continue_on_device_failure:
+
+      .. rst-class:: ansible-option-title
+
+      **continue_on_device_failure**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-continue_on_device_failure" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`boolean`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Continue processing other devices if one device fails.
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-choices:`Choices:`
+
+      - :ansible-option-choices-entry-default:`false` :ansible-option-choices-default-mark:`← (default)`
+      - :ansible-option-choices-entry:`true`
 
 
       .. raw:: html
@@ -515,6 +597,44 @@ Parameters
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-recovery_test_command"></div>
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__parameter-recovery_test_command:
+
+      .. rst-class:: ansible-option-title
+
+      **recovery_test_command**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-recovery_test_command" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Custom command to test device responsiveness during recovery.
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-default-bold:`Default:` :ansible-option-default:`"show clock"`
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="parameter-seconds_to_wait"></div>
 
       .. _ansible_collections.cisco.radkit.exec_and_wait_module__parameter-seconds_to_wait:
@@ -603,6 +723,32 @@ Examples
 
 .. code-block:: yaml+jinja
 
+        - name: Test network connectivity (execution test, not success test)
+          cisco.radkit.exec_and_wait:
+            device_name: "{{ inventory_hostname }}"
+            commands:
+              - "ping 8.8.8.8 repeat 2"
+            prompts: []
+            answers: []
+            seconds_to_wait: 60
+            delay_before_check: 5
+          register: ping_test
+          # Note: This tests command execution, ping may fail due to network policies
+
+        - name: Execute show commands safely
+          cisco.radkit.exec_and_wait:
+            device_name: "{{ inventory_hostname }}"
+            commands:
+              - "show version"
+              - "show clock"
+              - "show ip interface brief"
+            prompts: []
+            answers: []
+            seconds_to_wait: 30
+            delay_before_check: 2
+            command_retries: 2
+          register: show_commands
+
         - name: Reload Router and Wait Until Available by using ansible_host
           cisco.radkit.exec_and_wait:
             #device_name: "{{inventory_hostname}}"
@@ -619,6 +765,7 @@ Examples
     "
             seconds_to_wait: 300  # total time to wait for reload
             delay_before_check: 10  # Delay before checking terminal
+            recovery_test_command: "show clock"
           register: reload_result
 
         - name: Reload Router and Wait Until Available by using inventory_hostname
@@ -636,7 +783,25 @@ Examples
     "
             seconds_to_wait: 300  # total time to wait for reload
             delay_before_check: 10  # Delay before checking terminal
+            command_retries: 1
+            continue_on_device_failure: false
           register: reload_result
+
+        - name: Configuration change with confirmation
+          cisco.radkit.exec_and_wait:
+            device_name: "{{ inventory_hostname }}"
+            commands:
+              - "configure terminal"
+              - "interface loopback 999"
+              - "description Test interface"
+              - "exit"
+              - "exit"
+            prompts: []
+            answers: []
+            seconds_to_wait: 30
+            delay_before_check: 2
+            recovery_test_command: "show running-config interface loopback 999"
+          register: config_result
 
         - name: Reset the Connection
           # The connection must be reset to allow Ansible to poll the router for connectivity
@@ -691,7 +856,7 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
         <div class="ansible-option-cell">
 
-      Device in Radkit
+      Device name (for single device compatibility)
 
 
       .. rst-class:: ansible-option-line
@@ -702,6 +867,335 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
       .. raw:: html
 
         </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-devices"></div>
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-devices:
+
+      .. rst-class:: ansible-option-title
+
+      **devices**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-devices" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Results for each device processed
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` always
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-devices/attempt_count"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-devices/attempt_count:
+
+      .. rst-class:: ansible-option-title
+
+      **attempt_count**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-devices/attempt_count" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Number of recovery attempts
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-devices/device_name"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-devices/device_name:
+
+      .. rst-class:: ansible-option-title
+
+      **device_name**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-devices/device_name" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Name of the device
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-devices/executed_commands"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-devices/executed_commands:
+
+      .. rst-class:: ansible-option-title
+
+      **executed_commands**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-devices/executed_commands" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`list` / :ansible-option-elements:`elements=string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      List of commands executed
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-devices/recovery_time"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-devices/recovery_time:
+
+      .. rst-class:: ansible-option-title
+
+      **recovery_time**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-devices/recovery_time" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`float`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Time taken for device recovery
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-devices/status"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-devices/status:
+
+      .. rst-class:: ansible-option-title
+
+      **status**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-devices/status" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Execution status (SUCCESS/FAILED)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-devices/stdout"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-devices/stdout:
+
+      .. rst-class:: ansible-option-title
+
+      **stdout**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-devices/stdout" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Command output
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
 
 
   * - .. raw:: html
@@ -731,7 +1225,7 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
         <div class="ansible-option-cell">
 
-      Command
+      Commands executed (for single device compatibility)
 
 
       .. rst-class:: ansible-option-line
@@ -771,7 +1265,7 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
         <div class="ansible-option-cell">
 
-      Output of commands
+      Output of commands (for single device compatibility)
 
 
       .. rst-class:: ansible-option-line
@@ -782,6 +1276,191 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
       .. raw:: html
 
         </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-summary"></div>
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-summary:
+
+      .. rst-class:: ansible-option-title
+
+      **summary**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-summary" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Summary of execution across all devices
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` always
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-summary/failed_devices"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-summary/failed_devices:
+
+      .. rst-class:: ansible-option-title
+
+      **failed_devices**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-summary/failed_devices" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Number of devices that failed
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-summary/successful_devices"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-summary/successful_devices:
+
+      .. rst-class:: ansible-option-title
+
+      **successful_devices**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-summary/successful_devices" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Number of devices that succeeded
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-summary/total_devices"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.exec_and_wait_module__return-summary/total_devices:
+
+      .. rst-class:: ansible-option-title
+
+      **total_devices**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-summary/total_devices" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Total number of devices processed
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
 
 
 

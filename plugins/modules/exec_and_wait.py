@@ -260,6 +260,7 @@ except ImportError:
     socket = None
 
 # Setup module logger
+import logging
 logger = logging.getLogger(__name__)
 
 __metaclass__ = type
@@ -462,29 +463,47 @@ def _execute_commands_once(
 
                 while True:
                     # Check for expected prompts
-                    index = child.expect(
-                        [re.compile(p) for p in prompts]
-                        + [pexpect.TIMEOUT, pexpect.EOF],
-                        timeout=command_timeout,
-                    )
+                    if prompts:
+                        # We have prompts to handle
+                        index = child.expect(
+                            [re.compile(p) for p in prompts]
+                            + [pexpect.TIMEOUT, pexpect.EOF],
+                            timeout=command_timeout,
+                        )
+                        
+                        output = child.before.decode("utf-8", errors="replace").strip()
+                        if output:
+                            full_output += f"\n{output}"
 
-                    output = child.before.decode("utf-8", errors="replace").strip()
-                    if output:
-                        full_output += f"\n{output}"
+                        if index < len(prompts):
+                            # Found matching prompt, send answer
+                            answer = answers[index]
+                            logger.info(f"Responding to prompt with: {answer}")
+                            executed_commands.append(answer)
+                            child.sendline(answer)
+                            time.sleep(DEFAULT_WAIT_AFTER_ANSWER)
 
-                    if index < len(prompts):
-                        # Found matching prompt, send answer
-                        answer = answers[index]
-                        logger.info(f"Responding to prompt with: {answer}")
-                        executed_commands.append(answer)
-                        child.sendline(answer)
-                        time.sleep(DEFAULT_WAIT_AFTER_ANSWER)
-
-                        # Capture output after answer
-                        child.expect([".*"], timeout=command_timeout)
-                        full_output += f"\n{child.before.decode('utf-8', errors='replace').strip()}"
+                            # Capture output after answer
+                            child.expect([".*"], timeout=command_timeout)
+                            full_output += f"\n{child.before.decode('utf-8', errors='replace').strip()}"
+                        else:
+                            # Hit timeout or EOF, exit loop
+                            break
                     else:
-                        # No more prompts, exit loop
+                        # No prompts expected, just wait for command completion
+                        try:
+                            # Wait for timeout - this means command completed normally
+                            index = child.expect([pexpect.TIMEOUT], timeout=command_timeout)
+                        except pexpect.exceptions.TIMEOUT:
+                            # Expected timeout - command completed
+                            pass
+                        
+                        # Capture any output that was generated
+                        output = child.before.decode("utf-8", errors="replace").strip()
+                        if output:
+                            full_output += f"\n{output}"
+                        
+                        # Command completed, exit loop
                         break
 
         except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT, OSError) as e:

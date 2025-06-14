@@ -22,7 +22,7 @@ cisco.radkit.radkit inventory -- Ansible dynamic inventory plugin for RADKIT.
 .. Collection note
 
 .. note::
-    This inventory plugin is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 1.8.1).
+    This inventory plugin is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 2.0.0).
 
     It is not included in ``ansible-core``.
     To check whether it is installed, run :code:`ansible-galaxy collection list`.
@@ -48,8 +48,8 @@ Synopsis
 
 .. Description
 
-- Reads inventories from the GitLab API.
-- Uses a YAML configuration file gitlab\_runners.[yml\|yaml].
+- Reads inventories from the RADKit service and creates dynamic Ansible inventory.
+- Supports SSH proxy configurations and host/port overrides for network devices.
 
 
 .. Aliases
@@ -85,6 +85,92 @@ Parameters
 
   * - Parameter
     - Comments
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-ansible_host_overrides"></div>
+
+      .. _ansible_collections.cisco.radkit.radkit_inventory__parameter-ansible_host_overrides:
+
+      .. rst-class:: ansible-option-title
+
+      **ansible_host_overrides**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-ansible_host_overrides" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+
+
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Dictionary mapping device names to specific ansible\_host values
+
+      Useful for SSH proxy configurations where devices connect to localhost
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-default-bold:`Default:` :ansible-option-default:`{}`
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-ansible_port_overrides"></div>
+
+      .. _ansible_collections.cisco.radkit.radkit_inventory__parameter-ansible_port_overrides:
+
+      .. rst-class:: ansible-option-title
+
+      **ansible_port_overrides**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-ansible_port_overrides" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+
+
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Dictionary mapping device names to specific ansible\_port values
+
+      Useful for SSH proxy or port forwarding configurations
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-default-bold:`Default:` :ansible-option-default:`{}`
+
+      .. raw:: html
+
+        </div>
 
   * - .. raw:: html
 
@@ -682,7 +768,7 @@ Parameters
 
         <div class="ansible-option-cell">
 
-      The name of this plugin, it should always be set to 'gitlab\_runners' for this plugin to recognize it as it's own.
+      The name of this plugin, it should always be set to 'cisco.radkit.radkit' for this plugin to recognize it as it's own.
 
 
       .. rst-class:: ansible-option-line
@@ -963,6 +1049,139 @@ Parameters
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-ssh_proxy_mode"></div>
+
+      .. _ansible_collections.cisco.radkit.radkit_inventory__parameter-ssh_proxy_mode:
+
+      .. rst-class:: ansible-option-title
+
+      **ssh_proxy_mode**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-ssh_proxy_mode" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`boolean`
+
+
+
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Enable SSH proxy mode - sets ansible\_host to 127.0.0.1 for all devices
+
+      When enabled, devices will connect through SSH proxy instead of direct connections
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-choices:`Choices:`
+
+      - :ansible-option-choices-entry-default:`false` :ansible-option-choices-default-mark:`← (default)`
+      - :ansible-option-choices-entry:`true`
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-ssh_proxy_port"></div>
+
+      .. _ansible_collections.cisco.radkit.radkit_inventory__parameter-ssh_proxy_port:
+
+      .. rst-class:: ansible-option-title
+
+      **ssh_proxy_port**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-ssh_proxy_port" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+
+
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Default SSH proxy port to use when ssh\_proxy\_mode is enabled
+
+      Can be overridden per device using ssh\_proxy\_port\_overrides
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-default-bold:`Default:` :ansible-option-default:`2222`
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-ssh_proxy_port_overrides"></div>
+
+      .. _ansible_collections.cisco.radkit.radkit_inventory__parameter-ssh_proxy_port_overrides:
+
+      .. rst-class:: ansible-option-title
+
+      **ssh_proxy_port_overrides**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-ssh_proxy_port_overrides" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+
+
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Dictionary mapping device names to specific SSH proxy ports
+
+      Example- device1- 2223, device2- 2224
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-default-bold:`Default:` :ansible-option-default:`{}`
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="parameter-strict"></div>
 
       .. _ansible_collections.cisco.radkit.radkit_inventory__parameter-strict:
@@ -1087,12 +1306,30 @@ Examples
 
 .. code-block:: yaml+jinja
 
-    # radkit_devices.yml
+    # Basic radkit_devices.yml
     plugin: cisco.radkit.radkit
 
-    # Example using constructed features
+    # Enhanced configuration with SSH proxy support
     plugin: cisco.radkit.radkit
     strict: False
+
+    # Enable SSH proxy mode - all devices will use 127.0.0.1 as ansible_host
+    ssh_proxy_mode: True
+    ssh_proxy_port: 2222
+
+    # Override specific devices with different ports/hosts
+    ansible_host_overrides:
+      special_device: "192.168.1.100"
+
+    ansible_port_overrides:
+      router1: 2223
+      router2: 2224
+
+    ssh_proxy_port_overrides:
+      router1: 2223
+      router2: 2224
+
+    # Group devices based on attributes
     keyed_groups:
       # group devices based on device type (ex radkit_device_type_IOS)
       - prefix: radkit_device_type
@@ -1100,6 +1337,21 @@ Examples
       # group devices based on description
       - prefix: radkit_description
         key: 'description'
+      # group devices for SSH proxy usage
+      - prefix: radkit_ssh_proxy
+        key: 'device_type'
+        separator: '_'
+
+    # Compose additional variables for SSH proxy
+    compose:
+      # Set ansible_user for SSH proxy format: device@service_serial
+      ansible_user: inventory_hostname + '@' + radkit_service_serial
+      # Set SSH connection args for proxy
+      ansible_ssh_common_args: "'-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
+
+    # Filter devices if needed
+    # filter_attr: 'device_type'
+    # filter_pattern: 'IOS'
 
 
 

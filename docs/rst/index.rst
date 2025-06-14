@@ -6,7 +6,7 @@ RADKit Ansible Collection
 
 This cisco.radkit Ansible collection provides plugins and modules for network automation through Cisco RADKit, enabling secure, scalable remote access to network devices and infrastructure.
 
-⚠️ **IMPORTANT**: Connection plugins (`cisco.radkit.network_cli` and `cisco.radkit.terminal`) are **DEPRECATED** as of v2.0.0. Use `ssh_proxy` module with `ansible.netcommon.network_cli` for network devices and `port_forward` module for Linux servers.
+⚠️ **IMPORTANT**: Connection plugins (:ref:`cisco.radkit.network_cli <ansible_collections.cisco.radkit.network_cli_connection>` and :ref:`cisco.radkit.terminal <ansible_collections.cisco.radkit.terminal_connection>`) are **DEPRECATED** as of v2.0.0. Use :ref:`ssh_proxy <ansible_collections.cisco.radkit.ssh_proxy_module>` module with ``ansible.netcommon.network_cli`` for network devices and :ref:`port_forward <ansible_collections.cisco.radkit.port_forward_module>` module for Linux servers.
 
 Requirements
 ################
@@ -69,16 +69,16 @@ Using this collection
 ⚠️ **MIGRATION NOTICE**: As of v2.0.0, the recommended approach has changed:
 
 **For Network Devices (Recommended):**
-- Use `ssh_proxy` module with standard `ansible.netcommon.network_cli` connection
+- Use :ref:`ssh_proxy <ansible_collections.cisco.radkit.ssh_proxy_module>` module with standard ``ansible.netcommon.network_cli`` connection
 - Device credentials remain on RADKit service (more secure)
 - Better compatibility with standard Ansible network modules
 
 **For Linux Servers (Recommended):**
-- Use `port_forward` module with standard SSH connection
+- Use :ref:`port_forward <ansible_collections.cisco.radkit.port_forward_module>` module with standard SSH connection
 - Full SSH functionality including SCP/SFTP file transfers
 
 **Legacy (DEPRECATED):**
-- Connection plugins `cisco.radkit.network_cli` and `cisco.radkit.terminal` are deprecated
+- Connection plugins :ref:`cisco.radkit.network_cli <ansible_collections.cisco.radkit.network_cli_connection>` and :ref:`cisco.radkit.terminal <ansible_collections.cisco.radkit.terminal_connection>` are deprecated
 - Will be removed in version 3.0.0
 
 * Inventory plugins can be used by specifying the radkit_devices.yml with -i or --inventory
@@ -146,7 +146,7 @@ Connection Plugins vs Modules vs Inventory Plugins
 
 **For Network Devices (Routers, Switches, Firewalls):**
 
-- ✅ **Recommended**: `ssh_proxy` module + standard `ansible.netcommon.network_cli`
+- ✅ **Recommended**: :ref:`ssh_proxy <ansible_collections.cisco.radkit.ssh_proxy_module>` module + standard ``ansible.netcommon.network_cli``
 - **Benefits**:
 
   - Device credentials remain on RADKit service (more secure)
@@ -157,7 +157,7 @@ Connection Plugins vs Modules vs Inventory Plugins
 
 **For Linux Servers:**
 
-- ✅ **Recommended**: `port_forward` module + standard SSH
+- ✅ **Recommended**: :ref:`port_forward <ansible_collections.cisco.radkit.port_forward_module>` module + standard SSH
 - **Benefits**:
 
   - Full SSH functionality including SCP/SFTP file transfers

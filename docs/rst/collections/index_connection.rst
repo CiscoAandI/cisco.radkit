@@ -12,5 +12,5 @@ cisco.radkit
 ------------
 
 * :ansplugin:`cisco.radkit.network_cli#connection` --
-* :ansplugin:`cisco.radkit.radkit_context#connection` --
+* :ansplugin:`cisco.radkit.radkit_context#connection` -- RADKit connection context management (internal use)
 * :ansplugin:`cisco.radkit.terminal#connection` --

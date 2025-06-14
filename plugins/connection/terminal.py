@@ -15,126 +15,126 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = """
-    author:
-    - Ansible Core Team
-    - Scott Dozier (@scdozier)
-    name: terminal
-    short_description: "DEPRECATED: Use port_forward module for Linux servers instead"
+author:
+  - Ansible Core Team
+  - Scott Dozier (@scdozier)
+name: terminal
+short_description: "DEPRECATED: Use port_forward module for Linux servers instead"
+description:
+  - "🚨 DEPRECATED as of v2.0.0: This connection plugin is deprecated."
+  - "Use port_forward module for Linux servers instead of this terminal connection."
+  - "Port forwarding provides better file transfer support (SCP/SFTP) required by most Ansible modules."
+  - "For network devices, use ssh_proxy module with ansible.netcommon.network_cli connection."
+  - Uses RADKit to connect to devices over SSH.  Works with LINUX platforms.
+deprecated:
+  why: "Replaced by port_forward module for better file transfer support"
+  version: "2.0.0"
+  alternative: "Use port_forward module for Linux servers"
+  removed_from_collection: "3.0.0"
+version_added: "0.1.0"
+options:
+  device_name:
     description:
-        - "🚨 DEPRECATED as of v2.0.0: This connection plugin is deprecated."
-        - "Use port_forward module for Linux servers instead of this terminal connection."
-        - "Port forwarding provides better file transfer support (SCP/SFTP) required by most Ansible modules."
-        - "For network devices, use ssh_proxy module with ansible.netcommon.network_cli connection."
-        - Uses RADKit to connect to devices over SSH.  Works with LINUX platforms.
-    deprecated:
-      why: "Replaced by port_forward module for better file transfer support"
-      version: "2.0.0"
-      alternative: "Use port_forward module for Linux servers"
-      removed_from_collection: "3.0.0"
-    version_added: "0.1.0"
-    options:
-      device_name:
-        description:
-            - Device name of the remote target. This must match the device name on RADKit (not host field)
-        vars:
-            - name: inventory_hostname
-      device_addr:
-        description:
-            - Hostname/Address of the remote target. This must match the host on RADKit.
-            - This option will be used when ansible_host or ansible_ssh_host is specified
-        vars:
-            - name: ansible_host
-            - name: ansible_ssh_host
-      radkit_service_serial:
-        description:
-            - The serial of the RADKit service you wish to connect through
-        vars:
-            - name: radkit_service_serial
-        env:
-          - name: RADKIT_ANSIBLE_SERVICE_SERIAL
-        required: True
-      radkit_identity:
-        description:
-            - The Client ID (owner email address) present in the RADKit client certificate.
-        vars:
-            - name: radkit_identity
-        env:
-          - name: RADKIT_ANSIBLE_IDENTITY
-        required: True
-      radkit_client_private_key_password_base64:
-        description:
-            - The private key password in base64 for radkit client
-        vars:
-            - name: radkit_client_private_key_password_base64
-        env:
-          - name: RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64
-        required: True
-      radkit_client_ca_path:
-        description:
-            - The path to the issuer chain for the identity certificate
-        vars:
-            - name: radkit_client_ca_path
-        env:
-          - name: RADKIT_ANSIBLE_CLIENT_CA_PATH
-        required: False
-      radkit_client_cert_path:
-        description:
-            - The path to the identity certificate
-        vars:
-            - name: radkit_client_cert_path
-        env:
-          - name: RADKIT_ANSIBLE_CLIENT_CERT_PATH
-        required: False
-      radkit_client_key_path:
-        description:
-            - The path to the private key for the identity certificate
-        vars:
-            - name: radkit_client_key_path
-        env:
-          - name: RADKIT_ANSIBLE_CLIENT_KEY_PATH
-        required: False
-      radkit_wait_timeout:
-        description:
-            - Specifies how many seconds RADKit will wait before failing task.
-            - Note that the request is not affected, and it will still eventually complete (successfully or unsuccessfully)
-        vars:
-            - name: radkit_wait_timeout
-        env:
-          - name: RADKIT_ANSIBLE_WAIT_TIMEOUT
-        required: False
-        default: 0
-        type: int
-      radkit_exec_timeout:
-        description:
-            - Specifies how many seconds RADKit will for wait command to complete
-        vars:
-            - name: radkit_exec_timeout
-        env:
-          - name: RADKIT_ANSIBLE_EXEC_TIMEOUT
-        required: False
-        default: 3600
-        type: int
-      radkit_connection_timeout:
-        description:
-            - Timeout in seconds for RADKit connection lifecycle
-            - Connection will be automatically cleaned up after this period of inactivity
-        vars:
-            - name: radkit_connection_timeout
-        env:
-          - name: RADKIT_CONNECTION_TIMEOUT
-        required: False
-        default: 3600
-        type: int
-      radkit_login_timeout:
-        description:
-            - Timeout in seconds for RADKit certificate login
-        vars:
-            - name: radkit_login_timeout  
-        env:
-          - name: RADKIT_LOGIN_TIMEOUT
-        required: False
-        default: 60
-        type: int
+      - Device name of the remote target. This must match the device name on RADKit (not host field)
+    vars:
+      - name: inventory_hostname
+  device_addr:
+    description:
+      - Hostname/Address of the remote target. This must match the host on RADKit.
+      - This option will be used when ansible_host or ansible_ssh_host is specified
+    vars:
+      - name: ansible_host
+      - name: ansible_ssh_host
+  radkit_service_serial:
+    description:
+      - The serial of the RADKit service you wish to connect through
+    vars:
+      - name: radkit_service_serial
+    env:
+      - name: RADKIT_ANSIBLE_SERVICE_SERIAL
+    required: True
+  radkit_identity:
+    description:
+      - The Client ID (owner email address) present in the RADKit client certificate.
+    vars:
+      - name: radkit_identity
+    env:
+      - name: RADKIT_ANSIBLE_IDENTITY
+    required: True
+  radkit_client_private_key_password_base64:
+    description:
+      - The private key password in base64 for radkit client
+    vars:
+      - name: radkit_client_private_key_password_base64
+    env:
+      - name: RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64
+    required: True
+  radkit_client_ca_path:
+    description:
+      - The path to the issuer chain for the identity certificate
+    vars:
+      - name: radkit_client_ca_path
+    env:
+      - name: RADKIT_ANSIBLE_CLIENT_CA_PATH
+    required: False
+  radkit_client_cert_path:
+    description:
+      - The path to the identity certificate
+    vars:
+      - name: radkit_client_cert_path
+    env:
+      - name: RADKIT_ANSIBLE_CLIENT_CERT_PATH
+    required: False
+  radkit_client_key_path:
+    description:
+      - The path to the private key for the identity certificate
+    vars:
+      - name: radkit_client_key_path
+    env:
+      - name: RADKIT_ANSIBLE_CLIENT_KEY_PATH
+    required: False
+  radkit_wait_timeout:
+    description:
+      - Specifies how many seconds RADKit will wait before failing task.
+      - Note that the request is not affected, and it will still eventually complete (successfully or unsuccessfully)
+    vars:
+      - name: radkit_wait_timeout
+    env:
+      - name: RADKIT_ANSIBLE_WAIT_TIMEOUT
+    required: False
+    default: 0
+    type: int
+  radkit_exec_timeout:
+    description:
+      - Specifies how many seconds RADKit will for wait command to complete
+    vars:
+      - name: radkit_exec_timeout
+    env:
+      - name: RADKIT_ANSIBLE_EXEC_TIMEOUT
+    required: False
+    default: 3600
+    type: int
+  radkit_connection_timeout:
+    description:
+      - Timeout in seconds for RADKit connection lifecycle
+      - Connection will be automatically cleaned up after this period of inactivity
+    vars:
+      - name: radkit_connection_timeout
+    env:
+      - name: RADKIT_CONNECTION_TIMEOUT
+    required: False
+    default: 3600
+    type: int
+  radkit_login_timeout:
+    description:
+      - Timeout in seconds for RADKit certificate login
+    vars:
+      - name: radkit_login_timeout  
+    env:
+      - name: RADKIT_LOGIN_TIMEOUT
+    required: False
+    default: 60
+    type: int
 """
 EXAMPLES = """
 - hosts: all

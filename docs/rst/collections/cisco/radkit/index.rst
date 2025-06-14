@@ -7,7 +7,7 @@
 Cisco.Radkit
 ============
 
-Collection version 1.8.1
+Collection version 2.0.0
 
 .. contents::
    :local:
@@ -89,7 +89,7 @@ Connection Plugins
 ~~~~~~~~~~~~~~~~~~
 
 * :ansplugin:`network_cli connection <cisco.radkit.network_cli#connection>` --
-* :ansplugin:`radkit_context connection <cisco.radkit.radkit_context#connection>` --
+* :ansplugin:`radkit_context connection <cisco.radkit.radkit_context#connection>` -- RADKit connection context management (internal use)
 * :ansplugin:`terminal connection <cisco.radkit.terminal#connection>` --
 
 .. toctree::

@@ -22,7 +22,7 @@ cisco.radkit.snmp module -- Perform SNMP operations via RADKit
 .. Collection note
 
 .. note::
-    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 1.8.1).
+    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 2.0.0).
 
     It is not included in ``ansible-core``.
     To check whether it is installed, run :code:`ansible-galaxy collection list`.
@@ -51,10 +51,11 @@ Synopsis
 
 .. Description
 
-- Executes SNMP GET and WALK operations through RADKit infrastructure
+- Executes SNMP GET, WALK, GET\_NEXT, and GET\_BULK operations through RADKit infrastructure
 - Supports both device name and host-based device identification
-- Provides configurable timeouts and comprehensive error handling
-- Returns structured SNMP response data for automation workflows
+- Supports multiple OIDs in a single request for efficient bulk operations
+- Provides configurable timeouts, retries, limits, and concurrency settings
+- Returns structured SNMP response data with comprehensive error handling
 - Ideal for network monitoring, device discovery, and configuration management
 
 
@@ -119,12 +120,26 @@ Parameters
 
         <div class="ansible-option-cell">
 
-      Action to run on SNMP API. Supports either get or walk
+      Action to run on SNMP API
+
+      get - Get specific OID values
+
+      walk - Walk OID tree (GETNEXT for SNMPv1, GETBULK for SNMPv2+)
+
+      get\_next - Get next OID values after specified OIDs
+
+      get\_bulk - Get multiple values after each OID (SNMPv2+ only)
 
 
       .. rst-class:: ansible-option-line
 
-      :ansible-option-default-bold:`Default:` :ansible-option-default:`"get"`
+      :ansible-option-choices:`Choices:`
+
+      - :ansible-option-choices-entry-default:`"get"` :ansible-option-choices-default-mark:`← (default)`
+      - :ansible-option-choices-entry:`"walk"`
+      - :ansible-option-choices-entry:`"get\_next"`
+      - :ansible-option-choices-entry:`"get\_bulk"`
+
 
       .. raw:: html
 
@@ -273,6 +288,44 @@ Parameters
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-concurrency"></div>
+
+      .. _ansible_collections.cisco.radkit.snmp_module__parameter-concurrency:
+
+      .. rst-class:: ansible-option-title
+
+      **concurrency**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-concurrency" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Maximum number of queries to fetch at once (walk/get\_bulk only)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-default-bold:`Default:` :ansible-option-default:`100`
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="parameter-device_host"></div>
 
       .. _ansible_collections.cisco.radkit.snmp_module__parameter-device_host:
@@ -379,6 +432,128 @@ Parameters
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-include_errors"></div>
+
+      .. _ansible_collections.cisco.radkit.snmp_module__parameter-include_errors:
+
+      .. rst-class:: ansible-option-title
+
+      **include_errors**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-include_errors" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`boolean`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Include error rows in the output
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-choices:`Choices:`
+
+      - :ansible-option-choices-entry-default:`false` :ansible-option-choices-default-mark:`← (default)`
+      - :ansible-option-choices-entry:`true`
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-include_mib_info"></div>
+
+      .. _ansible_collections.cisco.radkit.snmp_module__parameter-include_mib_info:
+
+      .. rst-class:: ansible-option-title
+
+      **include_mib_info**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-include_mib_info" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`boolean`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Include MIB information (labels, modules, variables) in output
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-choices:`Choices:`
+
+      - :ansible-option-choices-entry-default:`false` :ansible-option-choices-default-mark:`← (default)`
+      - :ansible-option-choices-entry:`true`
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-limit"></div>
+
+      .. _ansible_collections.cisco.radkit.snmp_module__parameter-limit:
+
+      .. rst-class:: ansible-option-title
+
+      **limit**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-limit" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Maximum number of OIDs to look up in one request (get/get\_next)
+
+      Maximum number of SNMP entries to fetch in one request (walk)
+
+      Number of SNMP entries to get after each OID (get\_bulk)
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="parameter-oid"></div>
 
       .. _ansible_collections.cisco.radkit.snmp_module__parameter-oid:
@@ -393,7 +568,7 @@ Parameters
 
       .. ansible-option-type-line::
 
-        :ansible-option-type:`string` / :ansible-option-required:`required`
+        :ansible-option-type:`any` / :ansible-option-required:`required`
 
       .. raw:: html
 
@@ -403,7 +578,57 @@ Parameters
 
         <div class="ansible-option-cell">
 
-      SNMP OID
+      SNMP OID or list of OIDs to query
+
+      Can be dot-separated strings like "1.3.6.1.2.1.1.1.0" or tuple of integers
+
+      Multiple OIDs can be provided for bulk operations
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-output_format"></div>
+
+      .. _ansible_collections.cisco.radkit.snmp_module__parameter-output_format:
+
+      .. rst-class:: ansible-option-title
+
+      **output_format**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-output_format" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Format of the output data
+
+      simple - Basic OID and value pairs
+
+      detailed - Include all available SNMP row information
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-choices:`Choices:`
+
+      - :ansible-option-choices-entry-default:`"simple"` :ansible-option-choices-default-mark:`← (default)`
+      - :ansible-option-choices-entry:`"detailed"`
 
 
       .. raw:: html
@@ -437,12 +662,46 @@ Parameters
 
         <div class="ansible-option-cell">
 
-      Timeout for individual SNMP requests
+      Timeout for individual SNMP requests in seconds
 
 
       .. rst-class:: ansible-option-line
 
       :ansible-option-default-bold:`Default:` :ansible-option-default:`10.0`
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-retries"></div>
+
+      .. _ansible_collections.cisco.radkit.snmp_module__parameter-retries:
+
+      .. rst-class:: ansible-option-title
+
+      **retries**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-retries" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      How many times to retry SNMP requests if they timeout
+
 
       .. raw:: html
 
@@ -505,11 +764,55 @@ Examples
 
 .. code-block:: yaml+jinja
 
-    - name:  SNMP Walk device
+    - name: Simple SNMP Get
       cisco.radkit.snmp:
         device_name: router1
-        oid: 1.3.6.1.2.1.1
+        oid: "1.3.6.1.2.1.1.1.0"
+        action: get
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: SNMP Walk with detailed output
+      cisco.radkit.snmp:
+        device_name: router1
+        oid: "1.3.6.1.2.1.1"
         action: walk
+        output_format: detailed
+        include_mib_info: true
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: Multiple OID Get with error handling
+      cisco.radkit.snmp:
+        device_host: "192.168.1.1"
+        oid:
+          - "1.3.6.1.2.1.1.1.0"
+          - "1.3.6.1.2.1.1.2.0"
+          - "1.3.6.1.2.1.1.3.0"
+        action: get
+        include_errors: true
+        retries: 3
+        request_timeout: 15
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: SNMP Get Next
+      cisco.radkit.snmp:
+        device_name: switch1
+        oid: "1.3.6.1.2.1.2.2.1.1"
+        action: get_next
+        limit: 10
+      register: snmp_output
+      delegate_to: localhost
+
+    - name: SNMP Get Bulk (SNMPv2+ only)
+      cisco.radkit.snmp:
+        device_name: router1
+        oid: "1.3.6.1.2.1.2.2.1"
+        action: get_bulk
+        limit: 20
+        concurrency: 50
+        request_timeout: 30
       register: snmp_output
       delegate_to: localhost
 
@@ -552,7 +855,7 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
       .. ansible-option-type-line::
 
-        :ansible-option-type:`list` / :ansible-option-elements:`elements=string`
+        :ansible-option-type:`list` / :ansible-option-elements:`elements=dictionary`
 
       .. raw:: html
 
@@ -562,7 +865,7 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
         <div class="ansible-option-cell">
 
-      SNMP Response
+      SNMP Response data containing OID values and metadata
 
 
       .. rst-class:: ansible-option-line
@@ -573,6 +876,643 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
       .. raw:: html
 
         </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/device_name"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/device_name:
+
+      .. rst-class:: ansible-option-title
+
+      **device_name**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/device_name" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Name of the device that responded
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"router1"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/error_code"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/error_code:
+
+      .. rst-class:: ansible-option-title
+
+      **error_code**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/error_code" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      SNMP error code if is\_error is true (only in detailed format)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when output\_format is detailed and is\_error is true
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`0`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/error_str"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/error_str:
+
+      .. rst-class:: ansible-option-title
+
+      **error_str**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/error_str" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      SNMP error string if is\_error is true (only in detailed format)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when output\_format is detailed and is\_error is true
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"noSuchName"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/is_error"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/is_error:
+
+      .. rst-class:: ansible-option-title
+
+      **is_error**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/is_error" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`boolean`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Whether this row contains an error (only in detailed format)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when output\_format is detailed
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`false`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/label"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/label:
+
+      .. rst-class:: ansible-option-title
+
+      **label**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/label" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      MIB-resolved object ID (only when include\_mib\_info is true)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when include\_mib\_info is true
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"iso.org.dod.internet.mgmt.mib-2.system.sysDescr"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/mib_module"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/mib_module:
+
+      .. rst-class:: ansible-option-title
+
+      **mib_module**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/mib_module" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      MIB module name (only when include\_mib\_info is true)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when include\_mib\_info is true
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"SNMPv2-MIB"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/mib_str"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/mib_str:
+
+      .. rst-class:: ansible-option-title
+
+      **mib_str**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/mib_str" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      Full MIB string representation (only when include\_mib\_info is true)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when include\_mib\_info is true
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"SNMPv2-MIB::sysDescr.0"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/mib_variable"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/mib_variable:
+
+      .. rst-class:: ansible-option-title
+
+      **mib_variable**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/mib_variable" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      MIB variable name (only when include\_mib\_info is true)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when include\_mib\_info is true
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"sysDescr"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/oid"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/oid:
+
+      .. rst-class:: ansible-option-title
+
+      **oid**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/oid" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      The SNMP OID as a dot-separated string
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"1.3.6.1.2.1.1.1.0"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/type"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/type:
+
+      .. rst-class:: ansible-option-title
+
+      **type**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/type" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      ASN.1 type of the SNMP value (only in detailed format)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when output\_format is detailed
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"OctetString"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/value"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/value:
+
+      .. rst-class:: ansible-option-title
+
+      **value**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/value" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`any`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      The SNMP value returned
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"Cisco IOS Software"`
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-indent"></div><div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-data/value_str"></div>
+
+      .. raw:: latex
+
+        \hspace{0.02\textwidth}\begin{minipage}[t]{0.3\textwidth}
+
+      .. _ansible_collections.cisco.radkit.snmp_module__return-data/value_str:
+
+      .. rst-class:: ansible-option-title
+
+      **value_str**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-data/value_str" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+      .. raw:: latex
+
+        \end{minipage}
+
+    - .. raw:: html
+
+        <div class="ansible-option-indent-desc"></div><div class="ansible-option-cell">
+
+      String representation of the value (only in detailed format)
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when output\_format is detailed
+
+      .. rst-class:: ansible-option-line
+      .. rst-class:: ansible-option-sample
+
+      :ansible-option-sample-bold:`Sample:` :ansible-rv-sample-value:`"Cisco IOS Software"`
+
+
+      .. raw:: html
+
+        </div>
+
 
 
 

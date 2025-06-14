@@ -22,7 +22,7 @@ cisco.radkit.http module -- Execute HTTP/HTTPS requests on devices via Cisco RAD
 .. Collection note
 
 .. note::
-    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 1.8.1).
+    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 2.0.0).
 
     It is not included in ``ansible-core``.
     To check whether it is installed, run :code:`ansible-galaxy collection list`.
@@ -260,7 +260,7 @@ Parameters
 
       Raw request body content as string
 
-      Mutually exclusive with 'json' parameter
+      Mutually exclusive with 'json' and 'data' parameters
 
 
       .. raw:: html
@@ -306,6 +306,42 @@ Parameters
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-data"></div>
+
+      .. _ansible_collections.cisco.radkit.http_module__parameter-data:
+
+      .. rst-class:: ansible-option-title
+
+      **data**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-data" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Data to be form-encoded and sent in the request body
+
+      Mutually exclusive with 'json' and 'content' parameters
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="parameter-device_name"></div>
 
       .. _ansible_collections.cisco.radkit.http_module__parameter-device_name:
@@ -333,6 +369,42 @@ Parameters
       Name of the device or service as it appears in RADKit inventory
 
       Must be a valid device accessible through RADKit
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-files"></div>
+
+      .. _ansible_collections.cisco.radkit.http_module__parameter-files:
+
+      .. rst-class:: ansible-option-title
+
+      **files**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-files" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Files to upload with the request (multipart form data)
+
+      Can be used alone or with 'data' parameter
 
 
       .. raw:: html
@@ -442,7 +514,7 @@ Parameters
 
       Request body to be JSON-encoded and sent with appropriate Content-Type
 
-      Mutually exclusive with 'content' parameter
+      Mutually exclusive with 'content' and 'data' parameters
 
 
       .. raw:: html
@@ -657,6 +729,42 @@ Parameters
 
         </div>
 
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-timeout"></div>
+
+      .. _ansible_collections.cisco.radkit.http_module__parameter-timeout:
+
+      .. rst-class:: ansible-option-title
+
+      **timeout**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-timeout" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`float`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Timeout for the request on the Service side, in seconds
+
+      If not specified, the Service default timeout will be used
+
+
+      .. raw:: html
+
+        </div>
+
 
 .. Attributes
 
@@ -731,7 +839,38 @@ Examples
         headers:
           Content-Type: text/plain
         status_code: [200, 204]
+        timeout: 30.0
       register: config_update
+      delegate_to: localhost
+
+    # POST request with form data
+    - name: Submit form data
+      cisco.radkit.http:
+        device_name: web-server
+        path: /api/form-submit
+        method: POST
+        data:
+          username: "admin"
+          password: "secret"
+          action: "login"
+        headers:
+          User-Agent: "Ansible-HTTP-Client"
+      register: form_response
+      delegate_to: localhost
+
+    # File upload with multipart form data
+    - name: Upload firmware file
+      cisco.radkit.http:
+        device_name: device-01
+        path: /api/firmware/upload
+        method: POST
+        files:
+          firmware: "/path/to/firmware.bin"
+        data:
+          version: "1.2.3"
+          description: "Latest firmware"
+        timeout: 300.0
+      register: upload_response
       delegate_to: localhost
 
     # Display response data

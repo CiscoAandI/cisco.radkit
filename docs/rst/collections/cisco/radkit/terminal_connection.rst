@@ -25,7 +25,7 @@ The errors were:
 
         1 validation error for PluginDocSchema
         doc -> deprecated -> removed_from_collection
-          Field required (type=missing)
+          String should match pattern '^([^.]+\.[^.]+)$' (type=string_pattern_mismatch; pattern=^([^.]+\.[^.]+)$)
 
 
 File a bug with the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible/issues>`_ in order to have it corrected.

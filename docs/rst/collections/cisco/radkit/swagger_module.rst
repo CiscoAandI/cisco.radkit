@@ -22,7 +22,7 @@ cisco.radkit.swagger module -- Interacts with Swagger/OpenAPI endpoints via RADK
 .. Collection note
 
 .. note::
-    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 1.8.1).
+    This module is part of the `cisco.radkit collection <https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible>`_ (version 2.0.0).
 
     It is not included in ``ansible-core``.
     To check whether it is installed, run :code:`ansible-galaxy collection list`.
@@ -235,6 +235,114 @@ Parameters
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-content"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__parameter-content:
+
+      .. rst-class:: ansible-option-title
+
+      **content**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-content" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Raw request body content as string or bytes
+
+      Mutually exclusive with 'json' and 'data' parameters
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-cookies"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__parameter-cookies:
+
+      .. rst-class:: ansible-option-title
+
+      **cookies**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-cookies" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Cookie values to include in the request
+
+      Provided as a dictionary of cookie names and values
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-data"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__parameter-data:
+
+      .. rst-class:: ansible-option-title
+
+      **data**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-data" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Data to be form-encoded and sent in the request body
+
+      Mutually exclusive with 'json' and 'content' parameters
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="parameter-device_name"></div>
 
       .. _ansible_collections.cisco.radkit.swagger_module__parameter-device_name:
@@ -260,6 +368,78 @@ Parameters
         <div class="ansible-option-cell">
 
       Name of device as it shows in RADKit inventory
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-files"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__parameter-files:
+
+      .. rst-class:: ansible-option-title
+
+      **files**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-files" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Files to upload with the request (multipart form data)
+
+      Can be used alone or with 'data' parameter
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-headers"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__parameter-headers:
+
+      .. rst-class:: ansible-option-title
+
+      **headers**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-headers" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Custom HTTP headers to include in the request
+
+      Common headers include 'Content-Type', 'Authorization', etc.
 
 
       .. raw:: html
@@ -331,7 +511,9 @@ Parameters
 
         <div class="ansible-option-cell">
 
-      Request body to be encoded as json or None
+      Request body to be JSON-encoded and sent with appropriate Content-Type
+
+      Mutually exclusive with 'content' and 'data' parameters
 
 
       .. raw:: html
@@ -399,7 +581,45 @@ Parameters
 
         <div class="ansible-option-cell">
 
-      HTTP params
+      Path parameters for the Swagger path (e.g., for /users/{userId})
+
+      Provided as a dictionary of parameter names and values
+
+
+      .. raw:: html
+
+        </div>
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-params"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__parameter-params:
+
+      .. rst-class:: ansible-option-title
+
+      **params**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-params" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      URL query parameters to append to the request
+
+      Will be properly URL-encoded and appended to the path
 
 
       .. raw:: html
@@ -518,6 +738,42 @@ Parameters
 
         </div>
 
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="parameter-timeout"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__parameter-timeout:
+
+      .. rst-class:: ansible-option-title
+
+      **timeout**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#parameter-timeout" title="Permalink to this option"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`float`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      Timeout for the request on the Service side, in seconds
+
+      If not specified, the Service default timeout will be used
+
+
+      .. raw:: html
+
+        </div>
+
 
 .. Attributes
 
@@ -535,24 +791,72 @@ Examples
 
 .. code-block:: yaml+jinja
 
-    - name:  Get alarms from vManage
+    - name: Get alarms from vManage
       cisco.radkit.swagger:
         device_name: vmanage1
         path: /alarms
         method: get
         status_code: [200]
-        register: swagger_output
+      register: swagger_output
       delegate_to: localhost
 
-    - name:  Register a new NMS partner in vManage
+    - name: Register a new NMS partner in vManage with path parameters
       cisco.radkit.swagger:
         device_name: vmanage1
         path: /partner/{partnerType}
-        parameters: '{"partnerType": "dnac"}'
+        parameters:
+          partnerType: "dnac"
         method: post
         status_code: [200]
-        json: '{"name": "DNAC-test","partnerId": "dnac-test","description": "dnac-test"}'
+        json:
+          name: "DNAC-test"
+          partnerId: "dnac-test"
+          description: "dnac-test"
+        headers:
+          Authorization: "Bearer {{ auth_token }}"
       register: swagger_output
+      delegate_to: localhost
+
+    - name: Upload configuration file
+      cisco.radkit.swagger:
+        device_name: device1
+        path: /config/upload
+        method: post
+        files:
+          config: "{{ config_file_path }}"
+        data:
+          description: "New configuration"
+        timeout: 60.0
+      register: upload_result
+      delegate_to: localhost
+
+    - name: Get device status with query parameters
+      cisco.radkit.swagger:
+        device_name: device1
+        path: /status
+        method: get
+        params:
+          format: json
+          verbose: true
+        headers:
+          Accept: application/json
+        cookies:
+          sessionid: "{{ session_id }}"
+      register: status_result
+      delegate_to: localhost
+
+    - name: Send raw content data
+      cisco.radkit.swagger:
+        device_name: device1
+        path: /config/raw
+        method: put
+        content: |
+          interface GigabitEthernet0/1
+           ip address 192.168.1.1 255.255.255.0
+           no shutdown
+        headers:
+          Content-Type: text/plain
+      register: config_result
       delegate_to: localhost
 
 
@@ -576,6 +880,86 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
   * - Key
     - Description
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-content_type"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__return-content_type:
+
+      .. rst-class:: ansible-option-title
+
+      **content_type**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-content_type" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      HTTP response Content-Type header
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-cookies"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__return-cookies:
+
+      .. rst-class:: ansible-option-title
+
+      **cookies**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-cookies" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      HTTP response cookies
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` when cookies are present in response
+
+
+      .. raw:: html
+
+        </div>
+
 
   * - .. raw:: html
 
@@ -620,6 +1004,46 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
   * - .. raw:: html
 
         <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-headers"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__return-headers:
+
+      .. rst-class:: ansible-option-title
+
+      **headers**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-headers" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`dictionary`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      HTTP response headers
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
         <div class="ansibleOptionAnchor" id="return-json"></div>
 
       .. _ansible_collections.cisco.radkit.swagger_module__return-json:
@@ -649,6 +1073,46 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
       .. rst-class:: ansible-option-line
 
+      :ansible-option-returned-bold:`Returned:` when response contains valid JSON
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-method"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__return-method:
+
+      .. rst-class:: ansible-option-title
+
+      **method**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-method" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
+        :ansible-option-type:`string`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      The HTTP method that was used
+
+
+      .. rst-class:: ansible-option-line
+
       :ansible-option-returned-bold:`Returned:` success
 
 
@@ -674,6 +1138,46 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
       .. ansible-option-type-line::
 
+        :ansible-option-type:`integer`
+
+      .. raw:: html
+
+        </div>
+
+    - .. raw:: html
+
+        <div class="ansible-option-cell">
+
+      HTTP response status code
+
+
+      .. rst-class:: ansible-option-line
+
+      :ansible-option-returned-bold:`Returned:` success
+
+
+      .. raw:: html
+
+        </div>
+
+
+  * - .. raw:: html
+
+        <div class="ansible-option-cell">
+        <div class="ansibleOptionAnchor" id="return-url"></div>
+
+      .. _ansible_collections.cisco.radkit.swagger_module__return-url:
+
+      .. rst-class:: ansible-option-title
+
+      **url**
+
+      .. raw:: html
+
+        <a class="ansibleOptionLink" href="#return-url" title="Permalink to this return value"></a>
+
+      .. ansible-option-type-line::
+
         :ansible-option-type:`string`
 
       .. raw:: html
@@ -684,7 +1188,7 @@ Common return values are documented :ref:`here <common_return_values>`, the foll
 
         <div class="ansible-option-cell">
 
-      status
+      The complete URL that was requested
 
 
       .. rst-class:: ansible-option-line
