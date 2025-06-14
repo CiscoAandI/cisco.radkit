@@ -74,6 +74,22 @@ options:
                 description:
                     - TCP ports to be forwarded.
                 type: str
+            metadata:
+                description:
+                    - Metadata entries for the device.
+                type: list
+                elements: dict
+                suboptions:
+                    key:
+                        description:
+                            - Metadata key.
+                        required: True
+                        type: str
+                    value:
+                        description:
+                            - Metadata value.
+                        required: True
+                        type: str
             terminal:
                 description:
                     - Terminal access information.
@@ -145,6 +161,13 @@ EXAMPLES = """
           enabled: True
           description: my test device
           forwarded_tcp_ports: '22'
+          metadata:
+            - key: location
+              value: datacenter-1
+            - key: owner
+              value: network-team
+            - key: environment
+              value: production
           terminal:
             port: 22
             username: test
@@ -175,6 +198,7 @@ try:
         NewDevice,
         NewTerminal,
         DeviceType,
+        MetaDataEntry,
     )
 
     HAS_RADKIT = True
@@ -256,6 +280,14 @@ def run_action(module: AnsibleModule, control_api: ControlAPI):
 
             new_terminal = NewTerminal(**terminal_kwargs) if terminal_kwargs else None
 
+            # Handle metadata if provided
+            metadata_entries = []
+            if data.get("metadata"):
+                for meta_item in data["metadata"]:
+                    metadata_entries.append(
+                        MetaDataEntry(key=meta_item["key"], value=meta_item["value"])
+                    )
+
             new_device = NewDevice(
                 name=data["name"],
                 host=data["host"],
@@ -265,6 +297,7 @@ def run_action(module: AnsibleModule, control_api: ControlAPI):
                 description=data.get("description", ""),
                 forwardedTcpPorts=data.get("forwarded_tcp_ports", ""),
                 terminal=new_terminal,
+                metaData=metadata_entries if metadata_entries else None,
             )
             dev_create = control_api.create_device(new_device)
             if isinstance(dev_create, bytes):
@@ -386,6 +419,15 @@ def main():
                     labels=dict(type="list", elements="str", default=[]),
                     description=dict(type="str", default=""),
                     forwarded_tcp_ports=dict(type="str", default="", required=False),
+                    metadata=dict(
+                        type="list",
+                        elements="dict",
+                        required=False,
+                        options=dict(
+                            key=dict(type="str", required=True),
+                            value=dict(type="str", required=True),
+                        ),
+                    ),
                     terminal=dict(
                         type="dict",
                         required=False,

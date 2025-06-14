@@ -4,29 +4,35 @@
 RADKit Ansible Collection
 ==============================================
 
-This cisco.radkit Ansible collection is built to provide a collection of
-plugins and modules allows users to build or reuse playbooks while connecting through RADKIT.
+This cisco.radkit Ansible collection provides plugins and modules for network automation through Cisco RADKit, enabling secure, scalable remote access to network devices and infrastructure.
 
-This project is currently in a beta, use at your own risk.
+⚠️ **IMPORTANT**: Connection plugins (`cisco.radkit.network_cli` and `cisco.radkit.terminal`) are **DEPRECATED** as of v2.0.0. Use `ssh_proxy` module with `ansible.netcommon.network_cli` for network devices and `port_forward` module for Linux servers.
 
 Requirements
 ################
--  `RADKIT <https://radkit.cisco.com>`__ 1.7.5 or higher
+-  `RADKIT <https://radkit.cisco.com>`__ 1.8.5 or higher
 - Python >= 3.9
 
 Installation
 ################
+**From Ansible Galaxy:**
+
+.. code-block:: bash
+
+  ansible-galaxy collection install cisco.radkit
+
+**From Git (Development):**
+
+.. code-block:: bash
+
+  ansible-galaxy collection install git+https://github.com/CiscoAandI/cisco.radkit.git --force
+
+**From Local Archive:**
 Install directly from a downloaded tar file (available in `RADKIT downloads area <https://radkit.cisco.com/downloads/release/>`__ ):
 
 .. code-block:: bash
 
-  ansible-galaxy collection install cisco-radkit-1.7.5.tar.gz --force
-
-Or install directly via git:
-
-.. code-block:: bash
-
-  ansible-galaxy collection install git+https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible.git --force
+  ansible-galaxy collection install cisco-radkit-<version>.tar.gz
 
 .. toctree::
    :maxdepth: 2
@@ -54,12 +60,27 @@ Or install directly via git:
    examples/genie_diff_example.rst
    examples/http_proxy_example.rst
    examples/port_forward_example.rst
+   examples/ssh_proxy_example.rst
    examples/swagger_example.rst
 
 Using this collection
 ################################
 
-* Connection plugins can be used by adding 'connection: cisco.radkit.network_cli' or 'connection: cisco.radkit.terminal' to your playbook
+⚠️ **MIGRATION NOTICE**: As of v2.0.0, the recommended approach has changed:
+
+**For Network Devices (Recommended):**
+- Use `ssh_proxy` module with standard `ansible.netcommon.network_cli` connection
+- Device credentials remain on RADKit service (more secure)
+- Better compatibility with standard Ansible network modules
+
+**For Linux Servers (Recommended):**
+- Use `port_forward` module with standard SSH connection
+- Full SSH functionality including SCP/SFTP file transfers
+
+**Legacy (DEPRECATED):**
+- Connection plugins `cisco.radkit.network_cli` and `cisco.radkit.terminal` are deprecated
+- Will be removed in version 3.0.0
+
 * Inventory plugins can be used by specifying the radkit_devices.yml with -i or --inventory
 * Modules can be specified in the playbook by name cisco.radkit.<module name>
 
@@ -119,18 +140,39 @@ Limitations
 Connection Plugins vs Modules vs Inventory Plugins
 ################################################################
 
+⚠️ **IMPORTANT**: Connection plugins are **DEPRECATED as of v2.0.0**
+
+**Recommended Architecture (v2.0.0+):**
+
+**For Network Devices (Routers, Switches, Firewalls):**
+- ✅ **Recommended**: `ssh_proxy` module + standard `ansible.netcommon.network_cli`
+- **Benefits**: 
+  - Device credentials remain on RADKit service (more secure)
+  - Standard Ansible network modules work seamlessly
+  - Better performance and compatibility
+- **Note**: Disable SSH host key checking (host keys change between sessions)
+
+**For Linux Servers:**
+- ✅ **Recommended**: `port_forward` module + standard SSH
+- **Benefits**:
+  - Full SSH functionality including SCP/SFTP file transfers
+  - Works with all standard Ansible modules
+  - More reliable than SSH proxy for Linux hosts
+
+**Legacy Support (DEPRECATED):**
+
 Connection Plugins allow you to utilize existing Ansible modules but connect through RADKIT instead of directly via SSH.  With connection plugins,
 credentials to devices are stored on the remote RADKit service.
 
-* :ref:`cisco.radkit.network_cli <ansible_collections.cisco.radkit.network_cli_connection>` -- Network_cli plugin is used for network devices with existing Ansible modules. Tested with ios, nxos.
-* :ref:`cisco.radkit.terminal <ansible_collections.cisco.radkit.terminal_connection>` -- Terminal plugin is used for non networking devices (LINUX) to SSH based modules.
+* :ref:`cisco.radkit.network_cli <ansible_collections.cisco.radkit.network_cli_connection>` -- **DEPRECATED**: Use ssh_proxy module instead
+* :ref:`cisco.radkit.terminal <ansible_collections.cisco.radkit.terminal_connection>` -- **DEPRECATED**: Use port_forward module instead
 
-Modules are specific tasks built upon RADKit functions.  Some modules, such as http will require local credentials.  The HTTP Proxy and Port Forward
-modules allow you to utilize nearly any existing ansible module with the caveat that you must send credentials to the device.
+Modules are specific tasks built upon RADKit functions.  The SSH Proxy and Port Forward
+modules allow you to utilize nearly any existing ansible module with better security and compatibility.
 
 Inventory plugins allow you pull devices from the remote RADKIT service into your local Ansible inventory without manually building an inventory file.
 
-This chart shows some of the differences:
+This chart shows the current recommendations:
 
 
  ==================================== ============================= ===================== ====================== ==================== ================= ======================= ==============
