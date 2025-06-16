@@ -6,11 +6,16 @@
     ssh_proxy_port: 2225
     test_device: '{{ ios_device_name_1 }}'
     radkit_service_serial: '{{ radkit_service_serial }}'
+    radkit_identity: '{{ radkit_identity }}'
+    radkit_client_private_key_password_base64: '{{ radkit_client_private_key_password_base64 }}'
 
 - name: Test SSH Proxy Configuration (optional test mode)
   cisco.radkit.ssh_proxy:
     local_port: "{{ ssh_proxy_port }}"
     test: true
+    service_serial: "{{ radkit_service_serial }}"
+    identity: "{{ radkit_identity }}"
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
   register: ssh_proxy_test_result
   delegate_to: localhost
 
@@ -25,6 +30,9 @@
   cisco.radkit.ssh_proxy:
     local_port: "{{ ssh_proxy_port }}"
     local_address: "127.0.0.1"
+    service_serial: "{{ radkit_service_serial }}"
+    identity: "{{ radkit_identity }}"
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
   async: 300  # Keep running for 5 minutes
   poll: 0
   register: ssh_proxy_job
