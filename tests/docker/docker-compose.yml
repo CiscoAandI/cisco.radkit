@@ -1,0 +1,24 @@
+# Docker Compose for SSH Proxy Testing
+version: '3.8'
+
+services:
+  ssh-proxy-test:
+    build:
+      context: ../..
+      dockerfile: tests/docker/Dockerfile
+    environment:
+      - RADKIT_ANSIBLE_SERVICE_SERIAL=${RADKIT_ANSIBLE_SERVICE_SERIAL}
+      - RADKIT_ANSIBLE_IDENTITY=${RADKIT_ANSIBLE_IDENTITY}
+      - RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=${RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64}
+      - IOS_DEVICE_NAME_2=${TEST_DEVICE:-test-device}
+      - TEST_DEVICE=${TEST_DEVICE:-test-device}
+    volumes:
+      - ../..:/workspace
+    working_dir: /workspace
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+
+networks:
+  default:
+    name: radkit-test-network
