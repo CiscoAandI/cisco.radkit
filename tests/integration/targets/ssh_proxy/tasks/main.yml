@@ -4,7 +4,7 @@
 - name: Setup SSH Proxy test variables
   set_fact:
     ssh_proxy_port: 2225
-    test_device: '{{ ios_device_name_1 }}'
+    test_device: '{{ ios_device_name_2 }}'
     radkit_service_serial: '{{ radkit_service_serial }}'
     radkit_identity: '{{ radkit_identity }}'
     radkit_client_private_key_password_base64: '{{ radkit_client_private_key_password_base64 }}'
