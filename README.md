@@ -362,14 +362,14 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 ## Feature Comparison Matrix
 
-| Component | Network CLI | Linux SSH | File Transfer | Device Creds | Security | Status |
-|-----------|-------------|-----------|---------------|--------------|----------|--------|
-| **ssh_proxy + network_cli** | ✅ Excellent | ❌ No | ❌ No SCP | 🔒 Remote | 🛡️ High | ✅ **Recommended** |
-| **port_forward** | ✅ Good | ✅ Excellent | ✅ Full SCP/SFTP | 📍 Local | 🛡️ Medium | ✅ **Recommended** |
-| **terminal** (deprecated) | ❌ No | ✅ Basic | ✅ Limited | 🔒 Remote | 🛡️ High | ❌ **Deprecated** |
-| **network_cli** (deprecated) | ✅ Good | ❌ No | ❌ No | 🔒 Remote | 🛡️ High | ❌ **Deprecated** |
-| **http_proxy** | ❌ No | ❌ No | ❌ No | 📍 Local | 🛡️ Medium | ✅ Active |
-| **Command/Genie modules** | ✅ Specialized | ❌ No | ❌ No | 🔒 Remote | 🛡️ High | ✅ Active |
+| Component | Network CLI | Linux SSH | File Transfer | Device Creds | Status |
+|-----------|-------------|-----------|---------------|--------------|--------|
+| **ssh_proxy + network_cli** | ✅ Excellent | ❌ No | ❌ No SCP | 🔒 Remote | ✅ **Recommended** |
+| **port_forward** | ✅ Good | ✅ Excellent | ✅ Full SCP/SFTP | 📍 Local | ✅ **Recommended** |
+| **terminal** (deprecated) | ❌ No | ✅ Basic | ✅ Yes | 🔒 Remote | ❌ **Deprecated** |
+| **network_cli** (deprecated) | ✅ Good | ❌ No | ✅ Yes | 🔒 Remote | ❌ **Deprecated** |
+| **http_proxy** | ❌ No | ❌ No | ✅ Yes | 📍 Local | ✅ Active |
+| **Command/Genie modules** | ✅ Specialized | ❌ No | ❌ No | 🔒 Remote | ✅ **Recommended** |
 
 ### Links & Resources
 - **RADKit Documentation**: [radkit.cisco.com](https://radkit.cisco.com)
