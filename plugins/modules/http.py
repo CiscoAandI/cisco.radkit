@@ -5,7 +5,7 @@
 """
 Ansible module for HTTP/HTTPS interactions with devices via Cisco RADKit.
 
-This module provides a professional interface for making HTTP requests to
+This module provides a interface for making HTTP requests to
 network devices or services managed by Cisco RADKit, with comprehensive
 request and response handling.
 """
@@ -24,7 +24,7 @@ description:
   - Executes HTTP and HTTPS requests on devices or services managed by Cisco RADKit
   - Supports all standard HTTP methods with comprehensive request configuration
   - Provides structured response data including status, headers, and content
-  - Handles authentication, cookies, and custom headers professionally
+  - Handles authentication, cookies, and custom headers
 options:
     device_name:
         description:

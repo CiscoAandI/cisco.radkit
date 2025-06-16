@@ -54,7 +54,7 @@ Synopsis
 - Executes HTTP and HTTPS requests on devices or services managed by Cisco RADKit
 - Supports all standard HTTP methods with comprehensive request configuration
 - Provides structured response data including status, headers, and content
-- Handles authentication, cookies, and custom headers professionally
+- Handles authentication, cookies, and custom headers
 
 
 .. Aliases

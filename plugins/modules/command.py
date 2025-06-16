@@ -5,7 +5,7 @@
 """
 Ansible module for executing commands on network devices through Cisco RADKit.
 
-This module provides a professional interface for running commands on one or more
+This module provides a interface for running commands on one or more
 network devices managed by Cisco RADKit, with proper error handling and result formatting.
 """
 

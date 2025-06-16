@@ -193,7 +193,7 @@ RADKIT_ANSIBLE_SESSION_CACHE = (
 )  # type: dict[str, radkit_client.InteractiveConnection]
 
 
-# Import the professional RADKit context
+# Import the RADKit context
 from .radkit_context import RadkitClientContext, configure_radkit_context
 
 
@@ -515,7 +515,7 @@ class Connection(ConnectionBase):
         cache_key = self._cache_key()
         display.vvv("CLOSING RADKIT CONNECTION")
 
-        # Clean up the context properly with the new professional context
+        # Clean up the context properly with the new context
         if hasattr(self, "radkit_client_context") and self.radkit_client_context:
             self.radkit_client_context.close()
 
