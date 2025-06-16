@@ -63,7 +63,6 @@ options:
             - Custom SSH host private key in PEM format. If not provided, an ephemeral key will be generated.
         type: str
         required: False
-        no_log: True
     destroy_previous:
         description:
             - Destroy any existing SSH proxy before starting a new one
