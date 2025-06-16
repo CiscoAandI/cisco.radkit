@@ -54,10 +54,10 @@
       Connect to devices using: ssh {{ test_device }}@{{ radkit_service_serial }}@localhost -p {{ ssh_proxy_port }}
       Device credentials are handled automatically by RADKit service
 
-# Create a dynamic host for SSH proxy testing
+# Create a dynamic host for SSH proxy testing using the actual device name
 - name: Add dynamic host for SSH proxy testing
   add_host:
-    name: "ssh_proxy_test_device"
+    name: "{{ test_device }}"
     groups: "ssh_proxy_devices"
     ansible_connection: ansible.netcommon.network_cli
     ansible_network_os: ios
@@ -74,7 +74,7 @@
       cisco.ios.ios_command:
         commands: show ip interface brief
       register: interface_output
-      delegate_to: ssh_proxy_test_device
+      delegate_to: "{{ test_device }}"
 
     - name: Verify show ip interface brief output
       assert:
@@ -89,7 +89,7 @@
       cisco.ios.ios_command:
         commands: show version
       register: version_output
-      delegate_to: ssh_proxy_test_device
+      delegate_to: "{{ test_device }}"
 
     - name: Verify show version output
       assert:
@@ -147,7 +147,7 @@
           - show clock
           - show running-config | include hostname
       register: additional_commands_output
-      delegate_to: ssh_proxy_test_device
+      delegate_to: "{{ test_device }}"
 
     - name: Verify additional commands succeeded
       assert:
