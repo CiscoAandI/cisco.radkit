@@ -23,7 +23,9 @@
   assert:
     that:
       - ssh_proxy_test_result is not failed
-      - ssh_proxy_test_result.msg is defined
+      - ssh_proxy_test_result.test_mode is defined
+      - ssh_proxy_test_result.test_mode == true
+      - ssh_proxy_test_result.ssh_server_info is defined
     fail_msg: "SSH proxy test failed"
 
 - name: Start SSH Proxy Server
