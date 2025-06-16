@@ -30,7 +30,7 @@ deprecated:
   why: "Replaced by port_forward module for better file transfer support"
   version: "2.0.0"
   alternative: "Use port_forward module for Linux servers"
-  removed_from_collection: "3.0.0"
+  removed_from_collection: "cisco.radkit"
 version_added: "0.1.0"
 options:
   device_name:
