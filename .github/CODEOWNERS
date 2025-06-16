@@ -1,0 +1,27 @@
+# Global code owner for the cisco.radkit Ansible collection
+# This file defines who is responsible for code review and approval
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owner - all files require review from scdozier
+* @scdozier
+
+# Specific areas that may need special attention
+# Integration tests
+/tests/ @scdozier
+
+# Plugins and modules (core functionality)
+/plugins/ @scdozier
+
+# Documentation
+/docs/ @scdozier
+*.md @scdozier
+
+# Configuration files
+*.yml @scdozier
+*.yaml @scdozier
+*.cfg @scdozier
+*.toml @scdozier
+
+# Collection metadata
+/meta/ @scdozier
+galaxy.yml @scdozier
