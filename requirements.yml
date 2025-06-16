@@ -1,0 +1,14 @@
+---
+# Collection dependencies for development and testing
+collections:
+  - name: community.general
+    version: ">=7.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"
+
+# Python package requirements for collection functionality
+requirements:
+  - cisco-radkit-client>=1.8.5
+  - packaging
+  - httpx>=0.27.2
+  - pproxy>=2.7.0

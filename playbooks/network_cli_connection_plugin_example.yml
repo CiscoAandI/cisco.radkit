@@ -1,0 +1,42 @@
+# Network CLI Connection Plugin
+#
+# This example shows how an example playbook that can be run agaisnt a Network devcies.
+# Any existing module that works with the netcommon.network_cli (and maybe paramiko) should work.
+#
+# In order for RADKIT to make a connection, expose variables as environment variables or
+# optionally, add them as variables in the playbook.
+#
+#  export RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=$(echo -n 'mypassword' | base64)
+#  export RADKIT_ANSIBLE_IDENTITY="myuserid@cisco.com"
+#  export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
+#
+---
+- name: Example of usage of network cli connection plugin
+  hosts: all
+  connection: cisco.radkit.network_cli
+  vars:
+    radkit_service_serial: xxxx-xxxx-xxxx
+    ansible_network_os: ios
+  become: yes
+  tasks:
+    - name: Gather all ios facts
+      cisco.ios.ios_facts:
+        gather_subset: all
+
+    - name: Show debug
+      debug:
+        msg: "{{ ansible_facts }}"
+
+    - name: Run show version
+      cisco.ios.ios_command:
+        commands: show version
+
+    - name: configure global bgp as 64496
+      cisco.ios.ios_bgp:
+        config:
+          bgp_as: 601
+          router_id: 192.0.2.1
+          log_neighbor_changes: true
+          neighbors:
+          - neighbor: 203.0.113.5
+            remote_as: 64511(base)

@@ -1,0 +1,85 @@
+# RADKIT Genie Diff Example
+#
+# This example shows how an example playbook of how you can a command and run
+# a genie diff against a prior run on same device or across different devices.
+#
+# In order for RADKIT to make a connection, expose variables as environment variables or
+# optionally, add them as variables in the playbook.
+#
+#  export RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=$(echo -n 'mypassword' | base64)
+#  export RADKIT_ANSIBLE_IDENTITY="myuserid@cisco.com"
+#  export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
+#
+---
+- name: Example of RADKIT Genie Diff
+  hosts: daa-csr1
+  become: no
+  gather_facts: no
+  tasks:
+    - name:  Get show version parsed (initial snapshot)
+      cisco.radkit.genie_parsed_command:
+        commands: show version
+        device_name: "{{ inventory_hostname }}"
+        os: iosxe
+      register: cmd_output
+      delegate_to: localhost
+
+
+    - name:  Get show version parsed (2nd snapshot)
+      cisco.radkit.genie_parsed_command:
+        commands: show version
+        device_name: "{{ inventory_hostname }}"
+        os: iosxe
+      register: cmd_output2
+      delegate_to: localhost
+
+
+    - name:  Get a diff from snapshots of same device
+      cisco.radkit.genie_diff:
+        result_a: "{{ cmd_output }}"
+        result_b: "{{ cmd_output2 }}"
+        diff_snapshots: yes
+      register: diff
+      delegate_to: localhost
+
+    - name:  Show the diff (its going to be same in this example)
+      debug:
+        msg: "{{ diff['genie_diff_result'] }}"
+      delegate_to: localhost
+
+
+- name: Run a genie diff against multiple devices
+  hosts: localhost
+  become: no
+  gather_facts: no
+  tasks:
+    - name:  Get show version parsed from routerA
+      cisco.radkit.genie_parsed_command:
+        commands: show version
+        device_name: daa-csr1
+        os: iosxe
+      register: cmd_output
+      delegate_to: localhost
+
+
+    - name: Get show version parsed from routerB
+      cisco.radkit.genie_parsed_command:
+        commands: show version
+        device_name: daa-csr2
+        os: iosxe
+      register: cmd_output2
+      delegate_to: localhost
+
+
+    - name:  Get a diff from snapshots of both device
+      cisco.radkit.genie_diff:
+        result_a: "{{ cmd_output }}"
+        result_b: "{{ cmd_output2 }}"
+        diff_snapshots: no
+      register: diff
+      delegate_to: localhost
+
+    - name:  Show the diff (its going to be different in this example)
+      debug:
+        msg: "{{ diff['genie_diff_result_lines'] }}"
+      delegate_to: localhost

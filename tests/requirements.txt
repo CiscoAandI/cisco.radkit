@@ -1,0 +1,7 @@
+ansible-core>=2.12.0
+pytest>=6.0
+pytest-mock
+cisco-radkit-client
+cisco-radkit-genie
+pproxy
+packaging

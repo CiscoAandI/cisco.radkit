@@ -1,0 +1,2 @@
+warn_list:  # or 'skip_list' to silence them completely
+  - command-instead-of-shell  # Use shell only when shell functionality is required.

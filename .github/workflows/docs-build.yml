@@ -1,0 +1,113 @@
+name: Build Documentation
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**'
+      - 'plugins/**'
+      - 'meta/**'
+      - 'galaxy.yml'
+      - '.github/workflows/docs-build.yml'
+
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**'
+      - 'plugins/**'
+      - 'meta/**'
+      - 'galaxy.yml'
+      - '.github/workflows/docs-build.yml'
+
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-docs-${{ hashFiles('docs/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-docs-
+            ${{ runner.os }}-pip-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+
+      - name: Install collection dependencies
+        run: |
+          # Install the current collection in development mode
+          ansible-galaxy collection install . --force
+
+      - name: Build documentation
+        run: |
+          cd docs
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Check for documentation errors
+        run: |
+          # Check if build completed successfully
+          # The build script copies HTML files directly to docs/ root
+          if [ -f "docs/index.html" ]; then
+            echo "✅ Documentation build successful!"
+            echo "📄 Built files found:"
+            
+            # Show what was built
+            echo "Found root index: docs/index.html"
+            if [ -f "docs/collections/index.html" ]; then
+              echo "Found collections index: docs/collections/index.html"
+            fi
+            
+            # List some built files for verification
+            echo "HTML files in docs directory:"
+            find docs/ -name "*.html" | head -10
+            
+            echo "Directory structure:"
+            ls -la docs/ | grep -E "(index\.html|collections|_static|search\.html)"
+            
+          else
+            echo "❌ Documentation build failed - index.html not found in docs root"
+            echo "Listing docs directory contents:"
+            ls -la docs/
+            echo "Looking for any HTML files:"
+            find docs/ -name "*.html" | head -10 || echo "No HTML files found"
+            exit 1
+          fi
+
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-html
+          path: docs/
+          retention-days: 30
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            docs/temp-rst/
+            docs/build/
+          retention-days: 7

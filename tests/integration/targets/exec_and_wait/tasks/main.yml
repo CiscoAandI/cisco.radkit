@@ -1,0 +1,45 @@
+---
+# First test device connectivity with a simple command
+- name: Test device connectivity with config t
+  cisco.radkit.exec_and_wait:
+    device_name: "{{ ios_device_name_1 }}"
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    commands:
+      - "config t"
+    prompts:
+      - ".*"
+    answers:
+      - "exit\r"
+    seconds_to_wait: 45
+    delay_before_check: 2
+    command_timeout: 20
+  register: connectivity_test
+  failed_when: false  # Don't fail the entire test if device is unreachable
+
+# Fallback to second device if first is not reachable
+- name: Test fallback device connectivity with config t
+  cisco.radkit.exec_and_wait:
+    device_name: "{{ ios_device_name_2 }}"
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    commands:
+      - "config t"
+    prompts:
+      - ".*"
+    answers:
+      - "exit\r"
+    seconds_to_wait: 45
+    delay_before_check: 2
+    command_timeout: 20
+  register: fallback_connectivity_test
+  failed_when: false
+  when: connectivity_test.exec_status is not defined or connectivity_test.exec_status != "SUCCESS"
+
+# Set the active device for testing
+- name: Set active test device
+  set_fact:
+    active_device: "{{ ios_device_name_1 if (connectivity_test.exec_status is defined and connectivity_test.exec_status == 'SUCCESS') else ios_device_name_2 }}"
+    device_reachable: "{{ (connectivity_test.exec_status is defined and connectivity_test.exec_status == 'SUCCESS') or (fallback_connectivity_test.exec_status is defined and fallback_connectivity_test.exec_status == 'SUCCESS') }}"

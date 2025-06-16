@@ -1,0 +1,47 @@
+ansible.cfg
+tmp/
+.DS_Store
+__pycache__/
+.pytest_cache/
+*.pyc
+*.tar.gz
+.vscode/
+venv/
+
+# Integration test secrets (never commit these!)
+tests/integration/integration_config.yml
+integration_config.yml
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Test artifacts and coverage
+.coverage
+coverage.xml
+.pytest_cache/
+.ansible_test/
+
+# Documentation build artifacts
+docs/plugins/
+docs/_build/
+docs/build/
+docs/temp-rst/
+docs/examples/
+docs/.buildinfo
+docs/objects.inv
+docs/searchindex.js
+docs/search.html
+docs/index.html
+docs/_sources/
+docs/_static/
+
+# Keep only source documentation files
+!docs/conf.py
+!docs/antsibull-docs.cfg
+!docs/build.sh
+!docs/requirements.txt
+!docs/rst/index.rst
+!docs/rst/collections/index.rst
+!docs/*.md

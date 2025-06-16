@@ -1,0 +1,42 @@
+---
+# Example playbook demonstrating SSH proxy with RADKit
+# This playbook shows how to set up SSH proxy to access devices
+# through the RADKit service using standard SSH tools
+
+- hosts: localhost
+  become: no
+  gather_facts: no
+  vars:
+    # SSH server configuration
+    ssh_proxy_port: 2222
+  tasks:
+    - name: Start RADKit SSH Proxy Server
+      cisco.radkit.ssh_proxy:
+        local_port: "{{ ssh_proxy_port }}"
+      async: 300  # Keep running for 5 minutes (adjust based need)
+      poll: 0
+      register: ssh_proxy_job
+      failed_when: false  # Don't fail if the job is still running
+    
+    - name: Wait for SSH proxy to become available
+      ansible.builtin.wait_for:
+        port: "{{ ssh_proxy_port }}"
+        host: 127.0.0.1
+        delay: 3
+        timeout: 30
+
+# Example of a separate play that could use the SSH forwarding
+- hosts: localhost
+  become: no
+  gather_facts: no
+  vars:
+    ssh_port: 2222
+    # format for RADKIT SSH proxy is <radkit_device>@<radkit_serial>
+    ansible_user: "{{ inventory_hostname }}@{{ lookup('env', 'RADKIT_ANSIBLE_SERVICE_SERIAL') }}"
+  tasks:
+    - debug:
+        msg: "Running commands on {{ inventory_hostname }} via SSH Proxy for user {{ ansible_user }}"
+    - name: Run show ip interface brief
+      cisco.ios.ios_command:
+        commands: show ip interface brief
+      register: version_output

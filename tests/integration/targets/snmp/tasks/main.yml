@@ -1,0 +1,31 @@
+# Test SNMP module
+---
+- name: Run SNMP walk on sysDescr
+  cisco.radkit.snmp:
+    device_name: '{{ ios_device_name_1 }}'
+    oid: 1.3.6.1.2.1.1.1
+    action: walk
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+  register: snmp_output
+  delegate_to: localhost
+
+- assert:
+    that:
+      - "'IOS' in snmp_output.data[0].value"
+
+- name: Run SNMP get on sysDescr
+  cisco.radkit.snmp:
+    device_name: '{{ ios_device_name_1 }}'
+    oid: 1.3.6.1.2.1.1.1.0
+    action: get
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+  register: snmp_output
+  delegate_to: localhost
+
+- assert:
+    that:
+      - "'IOS' in snmp_output.data[0].value"

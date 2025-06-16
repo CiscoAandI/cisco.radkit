@@ -1,0 +1,14 @@
+# Test service_info module
+---
+- name:  Get RADKit service info
+  cisco.radkit.service_info:
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    ping: true
+    update_inventory: true
+    update_capabilities: true
+  register: service_info
+
+- debug:
+    var: service_info

@@ -1,0 +1,40 @@
+# RADKIT Command Example
+#
+# This example shows how an example playbook of how you can execute a command or
+# commands against one or more devices without a connection plugin.
+#
+# In order for RADKIT to make a connection, expose variables as environment variables or
+# optionally, add them as variables in the playbook.
+#
+#  export RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=$(echo -n 'mypassword' | base64)
+#  export RADKIT_ANSIBLE_IDENTITY="myuserid@cisco.com"
+#  export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
+#
+---
+- name: Example of RADKIT Command
+  hosts: daa-csr1
+  become: no
+  gather_facts: no
+  tasks:
+    - name: Execute 'show version' on CSR on a single device
+      cisco.radkit.command:
+        device_name: "{{ inventory_hostname }}"
+        command: show version
+      register: cmd_output
+      delegate_to: localhost
+
+    - name: Show output
+      debug:
+        msg: "{{ cmd_output.stdout_lines }}"
+
+    - name: Execute 'show version' on CSR on a multiple devices
+      cisco.radkit.command:
+        filter_attr: name
+        filter_pattern: daa-csr
+        command: show version
+      register: cmd_output
+      delegate_to: localhost
+
+    - name: Show output from all devices
+      debug:
+        msg: "{{ cmd_output['ansible_module_results'] }}"

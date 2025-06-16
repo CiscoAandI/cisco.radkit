@@ -1,0 +1,74 @@
+# RADKIT HTTP Proxy Example
+#
+# This example shows how you can utilize RADKIT's SOCKS proxy feature through
+# Ansible in order to connect to devices over HTTPS.  The http_proxy module creates a
+# https proxy and forwards requests to the SOCKS proxy.  Why? Most Ansible modules don't
+# support SOCKS proxy, but most support a HTTP proxy.
+#
+# This example starts the proxy and keeps it running in the background for
+# 300 seconds. You should adjust the time to be greater than the time you anticipate the play to run,
+# but not a crazy amount of time.  Pre_tasks were used here, but you can use tasks, or put the modules
+# in another play.
+#
+# Note that RADKIT requires that connections through the proxy be in format of <name>.<serial>.proxy
+#
+# In order for RADKIT to make a connection, expose variables as environment variables or
+# optionally, add them as variables in the playbook.
+#
+#  export RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64=$(echo -n 'mypassword' | base64)
+#  export RADKIT_ANSIBLE_IDENTITY="myuserid@cisco.com"
+#  export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
+#
+---
+- hosts: all
+  gather_facts: no
+  vars:
+    http_proxy_username: radkit
+    http_proxy_password: Radkit999
+    http_proxy_port: 4001
+    socks_proxy_port: 4000
+  environment:
+    http_proxy: "http://{{ http_proxy_username }}:{{ http_proxy_password }}@127.0.0.1:{{ http_proxy_port }}"
+    https_proxy: "http://{{ http_proxy_username }}:{{ http_proxy_password }}@127.0.0.1:{{ http_proxy_port }}"
+  pre_tasks:
+
+    - name: Test HTTP Proxy RADKIT To Find Potential Config Errors (optional)
+      cisco.radkit.http_proxy:
+        http_proxy_port: "{{ http_proxy_port }}"
+        socks_proxy_port: "{{ socks_proxy_port }}"
+        proxy_username: "{{ http_proxy_username }}"
+        proxy_password: "{{ http_proxy_password }}"
+        test: True
+      delegate_to: localhost
+      run_once: true
+
+    - name: Start HTTP Proxy Through RADKIT And Leave Running for 300 Seconds (adjust time based on playbook exec time)
+      cisco.radkit.http_proxy:
+        http_proxy_port: "{{ http_proxy_port }}"
+        socks_proxy_port: "{{ socks_proxy_port }}"
+        proxy_username: "{{ http_proxy_username }}"
+        proxy_password: "{{ http_proxy_password }}"
+      async: 300
+      poll: 0
+      delegate_to: localhost
+      run_once: true
+
+    - name: Wait for http proxy port to become open (it takes a little bit for proxy to start)
+      ansible.builtin.wait_for:
+        port: "{{ http_proxy_port }}"
+        delay: 1
+      delegate_to: localhost
+      run_once: true
+
+  tasks:
+
+    - name: Example ACI Task that goes through http proxy
+      cisco.aci.aci_system:
+        hostname:  "{{ inventory_hostname }}.{{ radkit_service_serial }}.proxy"
+        username: admin
+        password: "!v3G@!4@Y"
+        state: query
+        use_proxy: yes
+        validate_certs: no
+      delegate_to: localhost
+      failed_when: False

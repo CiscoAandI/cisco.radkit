@@ -1,0 +1,18 @@
+---
+# Test Linux device with terminal
+- name: Set network_os
+  set_fact:
+    ansible_connection: cisco.radkit.terminal
+    ansible_host: '{{ linux_device_name_1 }}'
+    inventory_hostname: '{{ linux_device_name_1 }}'
+    ansible_python_interpreter:  /usr/local/bin/python3
+
+# terminal is not currently working in 1.7.5
+# - name: Run echo test
+#  ansible.builtin.shell: echo 'test'
+#  register: shell_output
+#  connection: cisco.radkit.terminal
+#
+#- assert:
+#    that:
+#      - "'test' in shell_output.stdout"
