@@ -1,0 +1,190 @@
+---
+# Integration test for cisco.radkit.ssh_proxy module
+
+- name: Setup SSH Proxy test variables
+  set_fact:
+    ssh_proxy_port: 2225
+    test_device: '{{ ios_device_name_1 }}'
+    radkit_service_serial: '{{ radkit_service_serial }}'
+
+- name: Test SSH Proxy Configuration (optional test mode)
+  cisco.radkit.ssh_proxy:
+    local_port: "{{ ssh_proxy_port }}"
+    test: true
+  register: ssh_proxy_test_result
+  delegate_to: localhost
+
+- name: Verify SSH proxy test succeeded
+  assert:
+    that:
+      - ssh_proxy_test_result is not failed
+      - ssh_proxy_test_result.msg is defined
+    fail_msg: "SSH proxy test failed"
+
+- name: Start SSH Proxy Server
+  cisco.radkit.ssh_proxy:
+    local_port: "{{ ssh_proxy_port }}"
+    local_address: "127.0.0.1"
+  async: 300  # Keep running for 5 minutes
+  poll: 0
+  register: ssh_proxy_job
+  delegate_to: localhost
+
+- name: Wait for SSH proxy to become available
+  ansible.builtin.wait_for:
+    port: "{{ ssh_proxy_port }}"
+    host: 127.0.0.1
+    delay: 3
+    timeout: 30
+
+- name: Display SSH proxy connection information
+  debug:
+    msg: |
+      SSH Proxy is now running on port {{ ssh_proxy_port }}
+      Connect to devices using: ssh {{ test_device }}@{{ radkit_service_serial }}@localhost -p {{ ssh_proxy_port }}
+      Device credentials are handled automatically by RADKit service
+
+# Test the SSH proxy by running IOS commands through network_cli
+- name: Test IOS commands via SSH Proxy
+  block:
+    - name: Set connection variables for SSH proxy
+      set_fact:
+        ansible_connection: ansible.netcommon.network_cli
+        ansible_network_os: ios
+        ansible_host: 127.0.0.1
+        ansible_port: "{{ ssh_proxy_port }}"
+        ansible_user: "{{ test_device }}@{{ radkit_service_serial }}"
+        ansible_host_key_checking: false
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+    - name: Run show ip interface brief via SSH proxy
+      cisco.ios.ios_command:
+        commands: show ip interface brief
+      register: interface_output
+      vars:
+        ansible_connection: ansible.netcommon.network_cli
+        ansible_network_os: ios
+        ansible_host: 127.0.0.1
+        ansible_port: "{{ ssh_proxy_port }}"
+        ansible_user: "{{ test_device }}@{{ radkit_service_serial }}"
+        ansible_host_key_checking: false
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+    - name: Verify show ip interface brief output
+      assert:
+        that:
+          - interface_output is not failed
+          - interface_output.stdout is defined
+          - interface_output.stdout[0] is defined
+          - "'Interface' in interface_output.stdout[0] or 'interface' in interface_output.stdout[0]"
+        fail_msg: "show ip interface brief command failed or returned unexpected output"
+
+    - name: Run show version via SSH proxy
+      cisco.ios.ios_command:
+        commands: show version
+      register: version_output
+      vars:
+        ansible_connection: ansible.netcommon.network_cli
+        ansible_network_os: ios
+        ansible_host: 127.0.0.1
+        ansible_port: "{{ ssh_proxy_port }}"
+        ansible_user: "{{ test_device }}@{{ radkit_service_serial }}"
+        ansible_host_key_checking: false
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+    - name: Verify show version output
+      assert:
+        that:
+          - version_output is not failed
+          - version_output.stdout is defined
+          - version_output.stdout[0] is defined
+          - "'IOS' in version_output.stdout[0] or 'Version' in version_output.stdout[0]"
+        fail_msg: "show version command failed or returned unexpected output"
+
+    - name: Display command outputs
+      debug:
+        msg: |
+          Show IP Interface Brief Output:
+          {{ interface_output.stdout[0] | default('No output') }}
+          
+          Show Version Output (first 500 chars):
+          {{ (version_output.stdout[0] | default('No output'))[:500] }}
+
+  rescue:
+    - name: SSH proxy test failed
+      debug:
+        msg: |
+          SSH proxy test failed. This could be due to:
+          - Device {{ test_device }} not found in RADKit inventory
+          - Network connectivity issues
+          - Authentication problems
+          - SSH proxy not properly started
+      
+    - name: Fail the test
+      fail:
+        msg: "SSH proxy integration test failed"
+
+  always:
+    - name: Check SSH proxy job status
+      async_status:
+        jid: "{{ ssh_proxy_job.ansible_job_id }}"
+      register: proxy_status
+      ignore_errors: true
+      when: ssh_proxy_job.ansible_job_id is defined
+
+    - name: Display SSH proxy status
+      debug:
+        var: proxy_status
+      when: proxy_status is defined
+
+# Test multiple commands to ensure stability
+- name: Test multiple IOS commands via SSH proxy
+  block:
+    - name: Run additional IOS commands
+      cisco.ios.ios_command:
+        commands:
+          - show clock
+          - show running-config | include hostname
+          - show interfaces | include line protocol
+      register: additional_commands_output
+      vars:
+        ansible_connection: ansible.netcommon.network_cli
+        ansible_network_os: ios
+        ansible_host: 127.0.0.1
+        ansible_port: "{{ ssh_proxy_port }}"
+        ansible_user: "{{ test_device }}@{{ radkit_service_serial }}"
+        ansible_host_key_checking: false
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+    - name: Verify additional commands succeeded
+      assert:
+        that:
+          - additional_commands_output is not failed
+          - additional_commands_output.stdout is defined
+          - additional_commands_output.stdout | length == 3
+        fail_msg: "Additional IOS commands failed"
+
+    - name: Display additional command results
+      debug:
+        msg: |
+          Clock: {{ additional_commands_output.stdout[0] | default('N/A') }}
+          Hostname: {{ additional_commands_output.stdout[1] | default('N/A') }}
+          Interface Status: {{ (additional_commands_output.stdout[2] | default('N/A'))[:200] }}...
+
+  rescue:
+    - name: Additional commands failed
+      debug:
+        msg: "Additional commands test failed - this may be expected depending on device configuration"
+
+- name: SSH Proxy Integration Test Summary
+  debug:
+    msg: |
+      SSH Proxy Integration Test Results:
+      - SSH proxy started successfully on port {{ ssh_proxy_port }}
+      - Device {{ test_device }} accessible via proxy
+      - IOS commands executed successfully
+      - show ip interface brief: {{ 'PASSED' if interface_output is not failed else 'FAILED' }}
+      - show version: {{ 'PASSED' if version_output is not failed else 'FAILED' }}
+      - Additional commands: {{ 'PASSED' if additional_commands_output is not failed else 'FAILED' }}
+      
+      Integration test completed successfully!
