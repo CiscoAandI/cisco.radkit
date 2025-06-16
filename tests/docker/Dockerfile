@@ -73,19 +73,33 @@ fi\n\
 \n\
 # Create integration config\n\
 mkdir -p /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration\n\
-cat > /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml << EOF\n\
-ios_device_name_1: "${IOS_DEVICE_NAME_1:-daa-csr2}"\n\
-ios_device_name_2: "${IOS_DEVICE_NAME_2:-daa-csr1}"\n\
-linux_device_name_1: "${LINUX_DEVICE_NAME_1:-daa-bastion}"\n\
-http_device_name_1: "${HTTP_DEVICE_NAME_1:-sandboxdnac}"\n\
-swagger_device_name_1: "${SWAGGER_DEVICE_NAME_1:-sandbox-sdwan-2}"\n\
-ios_device_name_prefix: "${IOS_DEVICE_NAME_PREFIX:-daa-csr}"\n\
-radkit_service_serial: "${RADKIT_ANSIBLE_SERVICE_SERIAL}"\n\
-radkit_identity: "${RADKIT_ANSIBLE_IDENTITY}"\n\
-radkit_client_private_key_password_base64: "${RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64}"\n\
-EOF\n\
+# Copy existing integration config and update environment-specific values\n\
+cp /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml \\\n\
+   /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml.bak\n\
 \n\
-echo "Integration config created"\n\
+# Update the config with environment variables if provided\n\
+sed -i "s/radkit_service_serial: .*/radkit_service_serial: \\"${RADKIT_ANSIBLE_SERVICE_SERIAL}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+sed -i "s/radkit_identity: .*/radkit_identity: \\"${RADKIT_ANSIBLE_IDENTITY}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+sed -i "s/radkit_client_private_key_password_base64: .*/radkit_client_private_key_password_base64: \\"${RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+\n\
+# Optionally update device names if environment variables are provided\n\
+[ ! -z "$IOS_DEVICE_NAME_1" ] && sed -i "s/ios_device_name_1: .*/ios_device_name_1: \\"${IOS_DEVICE_NAME_1}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+[ ! -z "$IOS_DEVICE_NAME_2" ] && sed -i "s/ios_device_name_2: .*/ios_device_name_2: \\"${IOS_DEVICE_NAME_2}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+[ ! -z "$LINUX_DEVICE_NAME_1" ] && sed -i "s/linux_device_name_1: .*/linux_device_name_1: \\"${LINUX_DEVICE_NAME_1}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+[ ! -z "$HTTP_DEVICE_NAME_1" ] && sed -i "s/http_device_name_1: .*/http_device_name_1: \\"${HTTP_DEVICE_NAME_1}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+[ ! -z "$SWAGGER_DEVICE_NAME_1" ] && sed -i "s/swagger_device_name_1: .*/swagger_device_name_1: \\"${SWAGGER_DEVICE_NAME_1}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+[ ! -z "$IOS_DEVICE_NAME_PREFIX" ] && sed -i "s/ios_device_name_prefix: .*/ios_device_name_prefix: \\"${IOS_DEVICE_NAME_PREFIX}\\"/" \\\n\
+       /root/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml\n\
+\n\
+echo "Integration config updated from existing file"\n\
 echo "Running command: $@"\n\
 \n\
 # Change to the collection directory by default\n\

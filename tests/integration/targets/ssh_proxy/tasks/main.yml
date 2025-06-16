@@ -3,11 +3,22 @@
 
 - name: Setup SSH Proxy test variables
   set_fact:
-    ssh_proxy_port: 2225
-    test_device: '{{ ios_device_name_2 }}'
+    ssh_proxy_port: 22225
+    test_device: '{{ ios_device_name_1 }}'
     radkit_service_serial: '{{ radkit_service_serial }}'
     radkit_identity: '{{ radkit_identity }}'
     radkit_client_private_key_password_base64: '{{ radkit_client_private_key_password_base64 }}'
+    is_github_actions: "{{ ansible_env.GITHUB_ACTIONS | default('false') == 'true' }}"
+
+- name: Display environment information
+  debug:
+    msg: |
+      Test Environment:
+      - Running in GitHub Actions: {{ is_github_actions }}
+      - Device: {{ test_device }}
+      - Service Serial: {{ radkit_service_serial }}
+      - Identity: {{ radkit_identity }}
+      - SSH Proxy Port: {{ ssh_proxy_port }}
 
 - name: Test SSH Proxy Configuration (optional test mode)
   cisco.radkit.ssh_proxy:
@@ -44,8 +55,8 @@
   ansible.builtin.wait_for:
     port: "{{ ssh_proxy_port }}"
     host: 127.0.0.1
-    delay: 5
-    timeout: 60
+    delay: "{{ 15 if is_github_actions else 10 }}"
+    timeout: "{{ 180 if is_github_actions else 120 }}"
 
 - name: Display SSH proxy connection information
   debug:
@@ -54,8 +65,51 @@
       Connect to devices using: ssh {{ test_device }}@{{ radkit_service_serial }}@localhost -p {{ ssh_proxy_port }}
       Device credentials are handled automatically by RADKit service
 
+# Test basic SSH connectivity before attempting network_cli
+- name: Test basic SSH connectivity to proxy
+  command: >
+    timeout {{ 60 if is_github_actions else 30 }} ssh 
+    -o ConnectTimeout={{ 60 if is_github_actions else 30 }} 
+    -o BatchMode=yes -o StrictHostKeyChecking=no 
+    -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=15 -o ServerAliveCountMax=4
+    -p {{ ssh_proxy_port }} {{ test_device }}@{{ radkit_service_serial }}@127.0.0.1 'show clock'
+  register: ssh_test_result
+  ignore_errors: true
+  delegate_to: localhost
+
+- name: Display SSH connectivity test result
+  debug:
+    msg: |
+      SSH connectivity test result: {{ 'SUCCESS' if (ssh_test_result is defined and ssh_test_result.rc == 0) else 'FAILED' }}
+      Return code: {{ ssh_test_result.rc | default('N/A') if ssh_test_result is defined else 'N/A' }}
+      stdout: {{ ssh_test_result.stdout | default('N/A') if ssh_test_result is defined else 'N/A' }}
+      stderr: {{ ssh_test_result.stderr | default('N/A') if ssh_test_result is defined else 'N/A' }}
+
+# GitHub Actions specific: Additional connectivity test with verbose output
+- name: Test SSH proxy with verbose output (GitHub Actions only)
+  block:
+    - name: Run SSH test with maximum verbosity
+      command: >
+        timeout 90 ssh -vvv
+        -o ConnectTimeout=90
+        -o BatchMode=yes -o StrictHostKeyChecking=no 
+        -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=20 -o ServerAliveCountMax=5
+        -p {{ ssh_proxy_port }} {{ test_device }}@{{ radkit_service_serial }}@127.0.0.1 'show version | include IOS'
+      register: verbose_ssh_test
+      ignore_errors: true
+      delegate_to: localhost
+
+    - name: Display verbose SSH test results
+      debug:
+        msg: |
+          Verbose SSH Test Results:
+          Return code: {{ verbose_ssh_test.rc | default('N/A') }}
+          Command output: {{ verbose_ssh_test.stdout | default('No stdout') }}
+          Error output: {{ verbose_ssh_test.stderr | default('No stderr') }}
+  when: is_github_actions
+
 # Create a dynamic host for SSH proxy testing using the actual device name
-- name: Add dynamic host for SSH proxy testing
+- name: Add dynamic host for SSH proxy testing (GitHub Actions optimized)
   add_host:
     name: "{{ test_device }}"
     groups: "ssh_proxy_devices"
@@ -65,21 +119,40 @@
     ansible_port: "{{ ssh_proxy_port }}"
     ansible_user: "{{ test_device }}@{{ radkit_service_serial }}"
     ansible_host_key_checking: false
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=60'
-    ansible_command_timeout: 60
-    ansible_connect_timeout: 60
+    ansible_ssh_common_args: "{{ '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=240 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o TCPKeepAlive=yes -o ExitOnForwardFailure=yes' if is_github_actions else '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=120 -o ServerAliveInterval=30 -o ServerAliveCountMax=3' }}"
+    ansible_command_timeout: "{{ 240 if is_github_actions else 120 }}"
+    ansible_connect_timeout: "{{ 240 if is_github_actions else 120 }}"
 
 # Test the SSH proxy by running IOS commands through network_cli
-- name: Test IOS commands via SSH Proxy
+- name: Test IOS commands via SSH Proxy (GitHub Actions optimized)
   block:
-    - name: Run show ip interface brief via SSH proxy
+    - name: Debug connection parameters before attempting network_cli
+      debug:
+        msg: |
+          Connection parameters:
+          - Host: {{ test_device }}
+          - Connection: ansible.netcommon.network_cli
+          - OS: ios
+          - SSH Host: 127.0.0.1
+          - SSH Port: {{ ssh_proxy_port }}
+          - SSH User: {{ test_device }}@{{ radkit_service_serial }}
+          - Command Timeout: {{ 240 if is_github_actions else 120 }}
+          - Connect Timeout: {{ 240 if is_github_actions else 120 }}
+          - Environment: {{ 'GitHub Actions' if is_github_actions else 'Local/Docker' }}
+          - Enhanced Retries: {{ 'Yes (10 attempts, 30s delay)' if is_github_actions else 'Standard (5 attempts, 15s delay)' }}
+
+    - name: Run show ip interface brief via SSH proxy (with enhanced retry logic)
       cisco.ios.ios_command:
         commands: show ip interface brief
       register: interface_output
       delegate_to: "{{ test_device }}"
-      retries: 3
-      delay: 10
+      retries: "{{ 12 if is_github_actions else 5 }}"
+      delay: "{{ 45 if is_github_actions else 15 }}"
       until: interface_output is not failed
+      environment:
+        ANSIBLE_TIMEOUT: "{{ 300 if is_github_actions else 180 }}"
+        ANSIBLE_PERSISTENT_COMMAND_TIMEOUT: "{{ 300 if is_github_actions else 180 }}"
+        ANSIBLE_PERSISTENT_CONNECT_TIMEOUT: "{{ 300 if is_github_actions else 180 }}"
 
     - name: Verify show ip interface brief output
       assert:
@@ -115,17 +188,32 @@
           {{ (version_output.stdout[0] | default('No output'))[:500] }}
 
   rescue:
-    - name: SSH proxy test failed
+    - name: Display detailed failure information
       debug:
         msg: |
-          SSH proxy test failed. This could be due to:
-          - Device {{ test_device }} not found in RADKit inventory
-          - Network connectivity issues
-          - Authentication problems
-          - SSH proxy not properly started
+          SSH proxy network_cli test failed with detailed information:
           
-          Note: SSH proxy authentication with Ansible network_cli has known limitations
-      
+          Environment: {{ 'GitHub Actions' if is_github_actions else 'Local/Docker' }}
+          
+          Last attempt result:
+          - Failed: {{ interface_output.failed | default('N/A') }}
+          - Message: {{ interface_output.msg | default('N/A') }}
+          - Stdout: {{ interface_output.stdout | default('N/A') }}
+          - Stderr: {{ interface_output.stderr | default('N/A') }}
+          
+          Basic SSH connectivity test:
+          - SSH test successful: {{ 'Yes' if (ssh_test_result is defined and ssh_test_result.rc == 0) else 'No' }}
+          - SSH test stdout: {{ ssh_test_result.stdout | default('N/A') if ssh_test_result is defined else 'N/A' }}
+          - SSH test stderr: {{ ssh_test_result.stderr | default('N/A') if ssh_test_result is defined else 'N/A' }}
+          
+          Possible causes:
+          - RADKit service timeout (common in GitHub Actions due to network latency)
+          - Device {{ test_device }} not responding quickly enough
+          - Network latency between GitHub Actions and RADKit service
+          - Authentication issues specific to network_cli connection plugin
+          
+          Note: {{ 'This is expected in GitHub Actions environment due to network constraints' if is_github_actions else 'This indicates a potential issue with the SSH proxy or device connection' }}
+
     - name: Set test failure flag
       set_fact:
         ssh_proxy_network_test_failed: true
@@ -143,7 +231,7 @@
         var: proxy_status
       when: proxy_status is defined
 
-# Test multiple commands to ensure stability (optional)
+# Test multiple commands to ensure stability (optional, skip in GitHub Actions if initial test failed)
 - name: Test multiple IOS commands via SSH proxy
   block:
     - name: Run additional IOS commands
@@ -172,18 +260,19 @@
     - name: Additional commands failed
       debug:
         msg: "Additional commands test failed - this is acceptable for integration testing"
-  when: ssh_proxy_network_test_failed is not defined
+  when: ssh_proxy_network_test_failed is not defined or not is_github_actions
 
-- name: SSH Proxy Integration Test Summary
-  debug:
-    msg: |
-      SSH Proxy Integration Test Results:
-      - SSH proxy server started successfully on port {{ ssh_proxy_port }}
-      - SSH proxy test mode verification: PASSED
-      - Device {{ test_device }} connection via SSH proxy: {{ 'PASSED' if ssh_proxy_network_test_failed is not defined else 'FAILED (Expected - see documentation)' }}
-      - show ip interface brief: {{ 'PASSED' if (interface_output is defined and interface_output is not failed) else 'FAILED' }}
-      - show version: {{ 'PASSED' if (version_output is defined and version_output is not failed) else 'FAILED' }}
-      - Additional commands: {{ 'PASSED' if (additional_commands_output is defined and additional_commands_output is not failed) else 'SKIPPED' }}
-      
-      SSH Proxy module functionality verified!
-      Note: Network CLI authentication issues are a known limitation documented in the module.
+# Local/Docker environment: Standard validation
+- name: Standard test validation for local/Docker environments
+  assert:
+    that:
+      - ssh_proxy_test_result is not failed
+      - ssh_proxy_test_result.test_mode == true
+      - ssh_test_result is defined
+      - ssh_test_result.rc == 0
+      - ssh_proxy_network_test_failed is not defined
+    fail_msg: |
+      SSH Proxy integration test failed in local/Docker environment.
+      All functionality should work in this environment.
+    success_msg: "SSH Proxy integration test passed successfully!"
+  when: not is_github_actions

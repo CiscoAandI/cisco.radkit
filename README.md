@@ -48,69 +48,9 @@ export RADKIT_ANSIBLE_SERVICE_SERIAL="xxxx-xxx-xxxx"
 ```
 
 
-### Example Configuration in Playbook
 
-**Recommended Approach (SSH Proxy):**
-```yaml
----
-- name: Setup RADKit SSH Proxy
-  hosts: localhost
-  become: no
-  gather_facts: no
-  vars:
-    ssh_proxy_port: 2222
-  tasks:
-    - name: Start RADKit SSH Proxy Server
-      cisco.radkit.ssh_proxy:
-        local_port: "{{ ssh_proxy_port }}"
-      async: 300  # Keep running for 5 minutes
-      poll: 0
-      register: ssh_proxy_job
-      failed_when: false
-    
-    - name: Wait for SSH proxy to become available
-      ansible.builtin.wait_for:
-        port: "{{ ssh_proxy_port }}"
-        host: 127.0.0.1
-        delay: 3
-        timeout: 30
 
-- name: Execute commands on network devices
-  hosts: cisco_devices  # Your device inventory
-  become: no
-  gather_facts: no
-  connection: ansible.netcommon.network_cli
-  vars:
-    ansible_network_os: ios
-    ansible_port: 2222
-    ansible_user: "{{ inventory_hostname }}@{{ lookup('env', 'RADKIT_ANSIBLE_SERVICE_SERIAL') }}"
-    ansible_host_key_checking: false
-  tasks:
-    - name: Run show version
-      cisco.ios.ios_command:
-        commands: show version
-      register: version_output
-```
-
-**Legacy Configuration (DEPRECATED):**
-```yaml
----
-- hosts: router11
-  connection: cisco.radkit.network_cli
-  vars:
-    radkit_identity: user@cisco.com
-    ansible_network_os: ios
-  become: yes
-  gather_facts: no
-  tasks:
-    - name: Run show ip interface brief
-      cisco.ios.ios_command:
-        commands: show ip interface brief
-      register: version_output
-
-```
-
-## Quick Start
+## Quick Start Guide
 
 ### 1. Setup Authentication
 ```bash
@@ -120,19 +60,45 @@ export RADKIT_ANSIBLE_IDENTITY="your_email@company.com"
 export RADKIT_ANSIBLE_SERVICE_SERIAL="your-service-serial"
 ```
 
-### 1.1. Setup Inventory
-Create an inventory file with your RADKit-accessible devices:
+### 2. Setup Inventory
 
+**For SSH Proxy Approach (Recommended):**
+```ini
+[cisco_devices]
+router1
+router2
+router3
+
+[cisco_devices:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 ```
-# If using legacy network plugins, set ansible_host to IP stored in RADKit inventory
-router1 ansible_host=127.0.0.1
-router2 ansible_host=127.0.0.1
-router3 ansible_host=127.0.0.1
+
+**For Legacy Connection Plugins (DEPRECATED):**
+```ini
+# Device hostnames and IPs must match what is configured in RADKit inventory
+router1 ansible_host=10.1.1.1
+router2 ansible_host=10.1.2.1
+router3 ansible_host=10.1.3.1
 ```
 
-**Important**: Device hostnames in inventory must match the device names configured in your RADKit service.
+**Important**: 
+- **SSH Proxy**: Device hostnames in inventory must match device names in your RADKit service. Use `127.0.0.1` as `ansible_host` since connections go through the local proxy.
+- **Legacy Plugins**: Both hostname and IP address must match exactly what is configured in your RADKit service inventory.
 
-### 2. Network Device Example (Recommended)
+### 3. Network Device Example (Recommended: SSH Proxy)
+
+*Inventory file (inventory.ini):*
+```ini
+[cisco_devices]
+router1
+router2
+router3
+
+[cisco_devices:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+```
+
+*Playbook:*
 ```yaml
 ---
 - name: Setup RADKit SSH Proxy
@@ -171,9 +137,9 @@ router3 ansible_host=127.0.0.1
   connection: ansible.netcommon.network_cli
   vars:
     ansible_network_os: ios
+    ansible_host: 127.0.0.1  # All connections go through local proxy
     ansible_port: 2225
     ansible_user: "{{ inventory_hostname }}@{{ lookup('env', 'RADKIT_ANSIBLE_SERVICE_SERIAL') }}"
-    ansible_host: localhost
     ansible_host_key_checking: false
   tasks:
     - name: Get device version information
@@ -182,7 +148,31 @@ router3 ansible_host=127.0.0.1
       register: version_info
 ```
 
-### 3. Linux Server Example
+### 4. Legacy Configuration Example (DEPRECATED)
+
+*Inventory Setup (hostnames and IPs must match RADKit service inventory):*
+```ini
+[cisco_devices]
+router1 ansible_host=10.1.1.100  # IP must match RADKit inventory
+router2 ansible_host=10.1.2.100  # IP must match RADKit inventory
+```
+
+*Playbook:*
+```yaml
+---
+- hosts: router1  # Hostname must match RADKit service
+  connection: cisco.radkit.network_cli
+  vars:
+    radkit_identity: user@cisco.com
+    ansible_network_os: ios
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Run show ip interface brief
+      cisco.ios.ios_command:
+        commands: show ip interface brief
+      register: version_output
+```
 ```yaml
 - hosts: localhost
   vars:
@@ -226,7 +216,51 @@ router3 ansible_host=127.0.0.1
 
 ```
 
-### 4. Using RADKit Command Module (Alternative)
+### 5. Linux Server Example
+```yaml
+- hosts: localhost
+  vars:
+    target_server: "linux-server-01"
+    remote_port: 22
+  tasks:
+    - name: Start port forward
+      cisco.radkit.port_forward:
+        device_name: "{{ target_server }}"
+        remote_port: "{{ remote_port }}"
+        local_port: 2223
+      register: port_forward_result
+
+    - name: Wait for port forward to be ready
+      ansible.builtin.wait_for:
+        port: 2223
+        delay: 3
+      delegate_to: localhost
+
+    - name: Connect to Linux server via port forward
+      vars:
+        ansible_host: localhost
+        ansible_port: 2223
+        ansible_host_key_checking: false
+      delegate_to: localhost
+      block:
+        - name: Get system information
+          ansible.builtin.setup:
+          register: system_facts
+
+        - name: Display system information
+          debug:
+            msg: "Server {{ target_server }} running {{ system_facts.ansible_facts.ansible_distribution }} {{ system_facts.ansible_facts.ansible_distribution_version }}"
+
+        - name: Close port forward when done
+          cisco.radkit.port_forward:
+            device_name: "{{ target_server }}"
+            remote_port: "{{ remote_port }}"
+            local_port: 2223
+            state: absent
+
+```
+
+### 6. Using RADKit Command Module (Alternative)
 ```yaml
 - hosts: localhost
   tasks:
@@ -318,43 +352,9 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 - Terminal connection plugin requires passwordless sudo
 - Add to `/etc/sudoers`: `username ALL=(ALL:ALL) NOPASSWD:ALL`
 
-### Connection Plugin Issues (Legacy)
-
-For users still using deprecated connection plugins:
-
-**Performance**: `network_cli` plugin is faster than `terminal` for network devices due to persistent local connections.
-**Migration Recommended**: Update to `ssh_proxy` and `port_forward` modules for better reliability.
-
-## Architecture Overview
-
-**⚠️ IMPORTANT**: Connection plugins (`cisco.radkit.network_cli` and `cisco.radkit.terminal`) are **DEPRECATED** as of v2.0.0.
-
-### Recommended Architecture (v2.0.0+)
-
-**For Network Devices (Routers, Switches, Firewalls):**
-- ✅ **Recommended**: `ssh_proxy` module + standard `ansible.netcommon.network_cli`
-- **Benefits**: 
-  - Device credentials remain on RADKit service (more secure)
-  - Standard Ansible network modules work seamlessly
-  - Better performance and compatibility
-- **Note**: Disable SSH host key checking (host keys change between sessions)
-
-**For Linux Servers:**
-- ✅ **Recommended**: `port_forward` module + standard SSH
-- **Benefits**:
-  - Full SSH functionality including SCP/SFTP file transfers
-  - Works with all standard Ansible modules
-  - More reliable than SSH proxy for Linux hosts
-
-### Legacy Support (DEPRECATED)
-
-The connection plugins are available for a replacement for the netcommon.network_cli plugin 
-
-**Migration Path**: Update your playbooks to use the new `ssh_proxy` and `port_forward` modules for better reliability and security.
-
 ## Component Types
 
-**Connection Plugins (DEPRECATED)**: Enable Ansible modules to connect through RADKit instead of direct SSH. Device credentials stored on RADKit service.
+**Connection Plugins (DEPRECATED)**: Enable Ansible modules to connect through RADKit instead of direct SSH. Device credentials stored on RADKit service. Update your playbooks to use the new `ssh_proxy` and `port_forward` modules for better reliability and security.
 
 **Modules**: Specific tasks using RADKit functions. Includes specialized modules for network automation, device management, and proxy functionality.
 

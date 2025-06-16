@@ -30,6 +30,19 @@ test-integration-target: ## Run specific integration test target (usage: make te
 	@echo "🧪 Running integration test target: $(TARGET)"
 	./scripts/run-tests.sh integration $(TARGET)
 
+# Docker-based testing
+test-ssh-proxy-docker: ## Run SSH proxy test in Docker container
+	@echo "🐳 Running SSH proxy test in Docker..."
+	./tests/docker/run-ssh-proxy-test.sh
+
+test-ssh-proxy-docker-interactive: ## Run SSH proxy test in Docker interactively
+	@echo "🐳 Running SSH proxy test in Docker (interactive)..."
+	./tests/docker/run-ssh-proxy-test.sh --interactive
+
+test-ssh-proxy-docker-shell: ## Get interactive shell in SSH proxy test container
+	@echo "🐳 Starting interactive shell in Docker container..."
+	./tests/docker/run-ssh-proxy-test.sh shell
+
 # Development setup
 setup-local-testing: ## Set up local integration testing configuration
 	@echo "🔧 Setting up local testing configuration..."

@@ -116,6 +116,13 @@ jobs:
           RADKIT_PRIVATE_KEY_BASE64: ${{ secrets.RADKIT_PRIVATE_KEY_BASE64 }}
           RADKIT_CHAIN_BASE64: ${{ secrets.RADKIT_CHAIN_BASE64 }}
 
+      - name: Setup RADKit session logs directory
+        run: |
+          # Ensure session logs directory is writable (similar to Docker tmpfs fix)
+          mkdir -p ~/.radkit/session_logs
+          chmod 755 ~/.radkit/session_logs
+          echo "Session logs directory created and permissions set"
+
       - name: Create integration config from secrets
         run: |
           mkdir -p ~/.ansible/collections/ansible_collections/cisco/radkit/tests/integration
@@ -162,20 +169,26 @@ jobs:
               print('All required secrets are present')
           "
 
-      - name: Set up ansible.cfg
+      - name: Set up ansible.cfg with GitHub Actions optimizations
         run: |
           cat > ansible.cfg << EOF
           [defaults]
           host_key_checking = False
-          timeout = 30
+          timeout = 180
           gathering = explicit
           interpreter_python = auto_silent
+          command_warnings = False
           
           [connection]
           pipelining = True
           
           [inventory]
           host_pattern_mismatch = ignore
+          
+          [ssh_connection]
+          ssh_args = -o ControlMaster=auto -o ControlPersist=600s -o ServerAliveInterval=60 -o ServerAliveCountMax=5
+          control_path_dir = /tmp/.ansible-cp
+          control_path = %(directory)s/%%h-%%p-%%r
           EOF
 
       - name: List available test targets
@@ -207,6 +220,12 @@ jobs:
           RADKIT_ANSIBLE_IDENTITY: ${{ secrets.RADKIT_IDENTITY }}
           RADKIT_ANSIBLE_SERVICE_SERIAL: ${{ secrets.RADKIT_SERVICE_SERIAL }}
           RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64: ${{ secrets.RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 }}
+          # GitHub Actions specific timeout optimizations
+          ANSIBLE_TIMEOUT: 300
+          ANSIBLE_PERSISTENT_COMMAND_TIMEOUT: 300
+          ANSIBLE_PERSISTENT_CONNECT_TIMEOUT: 300
+          ANSIBLE_NETWORK_CLI_RETRIES: 5
+          GITHUB_ACTIONS: true
 
       - name: Run integration tests - Specific target
         if: ${{ github.event.inputs.test_target != '' }}
@@ -230,6 +249,15 @@ jobs:
             --python ${{ matrix.python-version }}
         env:
           ANSIBLE_CONFIG: ${{ github.workspace }}/ansible.cfg
+          RADKIT_ANSIBLE_IDENTITY: ${{ secrets.RADKIT_IDENTITY }}
+          RADKIT_ANSIBLE_SERVICE_SERIAL: ${{ secrets.RADKIT_SERVICE_SERIAL }}
+          RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64: ${{ secrets.RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 }}
+          # GitHub Actions specific timeout optimizations
+          ANSIBLE_TIMEOUT: 300
+          ANSIBLE_PERSISTENT_COMMAND_TIMEOUT: 300
+          ANSIBLE_PERSISTENT_CONNECT_TIMEOUT: 300
+          ANSIBLE_NETWORK_CLI_RETRIES: 5
+          GITHUB_ACTIONS: true
 
       - name: Run manual integration tests (fallback)
         if: failure()
