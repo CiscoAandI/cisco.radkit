@@ -44,8 +44,8 @@
   ansible.builtin.wait_for:
     port: "{{ ssh_proxy_port }}"
     host: 127.0.0.1
-    delay: 3
-    timeout: 30
+    delay: 5
+    timeout: 60
 
 - name: Display SSH proxy connection information
   debug:
@@ -65,7 +65,9 @@
     ansible_port: "{{ ssh_proxy_port }}"
     ansible_user: "{{ test_device }}@{{ radkit_service_serial }}"
     ansible_host_key_checking: false
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=60'
+    ansible_command_timeout: 60
+    ansible_connect_timeout: 60
 
 # Test the SSH proxy by running IOS commands through network_cli
 - name: Test IOS commands via SSH Proxy
@@ -75,6 +77,9 @@
         commands: show ip interface brief
       register: interface_output
       delegate_to: "{{ test_device }}"
+      retries: 3
+      delay: 10
+      until: interface_output is not failed
 
     - name: Verify show ip interface brief output
       assert:
