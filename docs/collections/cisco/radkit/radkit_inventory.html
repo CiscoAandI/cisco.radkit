@@ -1,0 +1,565 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="2.16.3" name="antsibull-docs" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cisco.radkit.radkit inventory – Ansible dynamic inventory plugin for RADKIT. &mdash; Cisco RADKIT Ansible Collection  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=41de9001" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/ansible.css?v=c5b67dd2" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/antsibull-minimal.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/rtd-ethical-ads.css?v=289b023e" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/images/Ansible-Mark-RGB_Black.png"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Index of all Connection Plugins" href="../../index_connection.html" />
+    <link rel="prev" title="cisco.radkit.terminal connection" href="terminal_connection.html" /><!-- extra head elements for Ansible beyond RTD Sphinx Theme -->
+
+
+
+
+</head>
+
+<body class="wy-body-for-nav"><!-- extra body elements for Ansible beyond RTD Sphinx Theme -->
+
+<div class="DocSite-globalNav ansibleNav">
+  <ul>
+    <li><a href="https://www.ansible.com/blog" target="_blank">Blog</a></li>
+    <li><a href="https://forum.ansible.com/" target="_blank">Ansible community forum</a></li>
+    <li><a href="https://docs.ansible.com/" target="_blank">Documentation</a></li>
+  </ul>
+</div>
+
+<a class="DocSite-nav" href="/" style="padding-bottom: 30px;">
+
+  <img class="DocSiteNav-logo"
+    src="../../../_static/images/Ansible-Mark-RGB_White.png"
+    alt="Ansible Logo">
+  <div class="DocSiteNav-title">Cisco RADKIT Ansible Collection Documentation</div>
+</a>
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Cisco RADKIT Ansible Collection
+          </a><!--- Based on https://github.com/rtfd/sphinx_rtd_theme/pull/438/files -->
+
+<div class="version">
+  
+    
+  
+</div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <label class="sr-only" for="q">Search docs:</label>
+    <input type="text" class="st-default-search-input" id="q" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  
+              <p class="caption" role="heading"><span class="caption-text">Collections:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Collection Index</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Collections in the Cisco Namespace</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Cisco.Radkit</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#description">Description</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#plugin-index">Plugin Index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugin indexes:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index_connection.html">Index of all Connection Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../index_inventory.html">Index of all Inventory Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../index_module.html">Index of all Modules</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/terminal_connection_plugin_example.html">Terminal Connection Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/network_cli_connection_plugin_example.html">Network CLI Connection Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/inventory_plugin_example.html">Inventory Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/radkit_command_example.html">RADKIT Command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/genie_parsed_command_example.html">Genie Parsed Command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/genie_diff_example.html">Genie Diff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/http_proxy_example.html">HTTP Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/port_forward_example.html">Port Forward</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/ssh_proxy_example.html">SSH Proxy Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/swagger_example.html">Swagger / OpenAPI</a></li>
+</ul>
+<!-- extra nav elements for Ansible beyond RTD Sphinx Theme -->
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Cisco RADKIT Ansible Collection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Collection Index</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Collections in the Cisco Namespace</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Cisco.Radkit</a></li>
+      <li class="breadcrumb-item active">cisco.radkit.radkit inventory – Ansible dynamic inventory plugin for RADKIT.</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+
+  
+           <div itemprop="articleBody">
+             
+  <span class="target" id="ansible-collections-cisco-radkit-radkit-inventory"></span><section id="cisco-radkit-radkit-inventory-ansible-dynamic-inventory-plugin-for-radkit">
+<h1>cisco.radkit.radkit inventory – Ansible dynamic inventory plugin for RADKIT.<a class="headerlink" href="#cisco-radkit-radkit-inventory-ansible-dynamic-inventory-plugin-for-radkit" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This inventory plugin is part of the <a class="reference external" href="https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible">cisco.radkit collection</a> (version 2.0.0).</p>
+<p>It is not included in <code class="docutils literal notranslate"><span class="pre">ansible-core</span></code>.
+To check whether it is installed, run <code class="code docutils literal notranslate"><span class="pre">ansible-galaxy</span> <span class="pre">collection</span> <span class="pre">list</span></code>.</p>
+<p>To install it, use: <code class="code docutils literal notranslate"><span class="pre">ansible-galaxy</span> <span class="pre">collection</span> <span class="pre">install</span> <span class="pre">git+https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible.git</span></code>.
+You need further requirements to be able to use this inventory plugin,
+see <a class="reference internal" href="#ansible-collections-cisco-radkit-radkit-inventory-requirements"><span class="std std-ref">Requirements</span></a> for details.</p>
+<p>To use it in a playbook, specify: <code class="code docutils literal notranslate"><span class="pre">cisco.radkit.radkit</span></code>.</p>
+</div>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#synopsis" id="id1">Synopsis</a></p></li>
+<li><p><a class="reference internal" href="#requirements" id="id2">Requirements</a></p></li>
+<li><p><a class="reference internal" href="#parameters" id="id3">Parameters</a></p></li>
+<li><p><a class="reference internal" href="#examples" id="id4">Examples</a></p></li>
+</ul>
+</nav>
+<section id="synopsis">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Synopsis</a><a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Reads inventories from the RADKit service and creates dynamic Ansible inventory.</p></li>
+<li><p>Supports SSH proxy configurations and host/port overrides for network devices.</p></li>
+</ul>
+</section>
+<section id="requirements">
+<span id="ansible-collections-cisco-radkit-radkit-inventory-requirements"></span><h2><a class="toc-backref" href="#id2" role="doc-backlink">Requirements</a><a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<p>The below requirements are needed on the local controller node that executes this inventory.</p>
+<ul class="simple">
+<li><p>radkit-client</p></li>
+</ul>
+</section>
+<section id="parameters">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Parameters</a><a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Comments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-ansible_host_overrides"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-ansible-host-overrides"><strong>ansible_host_overrides</strong></p>
+<a class="ansibleOptionLink" href="#parameter-ansible_host_overrides" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Dictionary mapping device names to specific ansible_host values</p>
+<p>Useful for SSH proxy configurations where devices connect to localhost</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">{}</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-ansible_port_overrides"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-ansible-port-overrides"><strong>ansible_port_overrides</strong></p>
+<a class="ansibleOptionLink" href="#parameter-ansible_port_overrides" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Dictionary mapping device names to specific ansible_port values</p>
+<p>Useful for SSH proxy or port forwarding configurations</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">{}</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-compose"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-compose"><strong>compose</strong></p>
+<a class="ansibleOptionLink" href="#parameter-compose" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Create vars from jinja2 expressions.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">{}</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-filter_attr"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-filter-attr"><strong>filter_attr</strong></p>
+<a class="ansibleOptionLink" href="#parameter-filter_attr" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Filter RADKit inventory by this attribute (ex name)</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-0"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_DEVICE_FILTER_ATTR"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_DEVICE_FILTER_ATTR</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-filter_pattern"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-filter-pattern"><strong>filter_pattern</strong></p>
+<a class="ansibleOptionLink" href="#parameter-filter_pattern" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Filter RADKit inventory by this pattern combined with filter_attr</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-1"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_DEVICE_FILTER_PATTERN"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_DEVICE_FILTER_PATTERN</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-groups"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-groups"><strong>groups</strong></p>
+<a class="ansibleOptionLink" href="#parameter-groups" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Add hosts to group based on Jinja2 conditionals.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">{}</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-keyed_groups"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-keyed-groups"><strong>keyed_groups</strong></p>
+<a class="ansibleOptionLink" href="#parameter-keyed_groups" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Add hosts to group based on the values of a variable.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">[]</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-keyed_groups/default_value"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-keyed-groups-default-value"><strong>default_value</strong></p>
+<a class="ansibleOptionLink" href="#parameter-keyed_groups/default_value" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+<p><em class="ansible-option-versionadded">added in ansible-core 2.12</em></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The default value when the host variable’s value is an empty string.</p>
+<p>This option is mutually exclusive with <code class="docutils literal notranslate"><span class="pre">trailing_separator</span></code>.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-keyed_groups/key"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-keyed-groups-key"><strong>key</strong></p>
+<a class="ansibleOptionLink" href="#parameter-keyed_groups/key" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>The key from input dictionary used to generate groups</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-keyed_groups/parent_group"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-keyed-groups-parent-group"><strong>parent_group</strong></p>
+<a class="ansibleOptionLink" href="#parameter-keyed_groups/parent_group" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>parent group for keyed group</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-keyed_groups/prefix"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-keyed-groups-prefix"><strong>prefix</strong></p>
+<a class="ansibleOptionLink" href="#parameter-keyed_groups/prefix" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>A keyed group name will start with this prefix</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-keyed_groups/separator"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-keyed-groups-separator"><strong>separator</strong></p>
+<a class="ansibleOptionLink" href="#parameter-keyed_groups/separator" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>separator used to build the keyed group name</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">&quot;_&quot;</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-keyed_groups/trailing_separator"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-keyed-groups-trailing-separator"><strong>trailing_separator</strong></p>
+<a class="ansibleOptionLink" href="#parameter-keyed_groups/trailing_separator" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+<p><em class="ansible-option-versionadded">added in ansible-core 2.12</em></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Set this option to <em>False</em> to omit the <code class="docutils literal notranslate"><span class="pre">separator</span></code> after the host variable when the value is an empty string.</p>
+<p>This option is mutually exclusive with <code class="docutils literal notranslate"><span class="pre">default_value</span></code>.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">false</span></code></p></li>
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">true</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-leading_separator"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-leading-separator"><strong>leading_separator</strong></p>
+<a class="ansibleOptionLink" href="#parameter-leading_separator" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+<p><em class="ansible-option-versionadded">added in ansible-core 2.11</em></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Use in conjunction with keyed_groups.</p>
+<p>By default, a keyed group that does not have a prefix or a separator provided will have a name that starts with an underscore.</p>
+<p>This is because the default prefix is “” and the default separator is “_”.</p>
+<p>Set this option to False to omit the leading underscore (or other separator) if no prefix is given.</p>
+<p>If the group name is derived from a mapping the separator is still used to concatenate the items.</p>
+<p>To not use a separator in the group name at all, set the separator for the keyed group to an empty string instead.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">false</span></code></p></li>
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">true</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-plugin"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-plugin"><strong>plugin</strong></p>
+<a class="ansibleOptionLink" href="#parameter-plugin" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The name of this plugin, it should always be set to ‘cisco.radkit.radkit’ for this plugin to recognize it as it’s own.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">&quot;cisco.radkit.radkit&quot;</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-radkit_client_ca_path"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-radkit-client-ca-path"><strong>radkit_client_ca_path</strong></p>
+<a class="ansibleOptionLink" href="#parameter-radkit_client_ca_path" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The path to the issuer chain for the identity certificate</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-2"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_CLIENT_CA_PATH"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_CLIENT_CA_PATH</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-radkit_client_cert_path"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-radkit-client-cert-path"><strong>radkit_client_cert_path</strong></p>
+<a class="ansibleOptionLink" href="#parameter-radkit_client_cert_path" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The path to the identity certificate</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-3"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_CLIENT_CERT_PATH"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_CLIENT_CERT_PATH</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-radkit_client_key_path"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-radkit-client-key-path"><strong>radkit_client_key_path</strong></p>
+<a class="ansibleOptionLink" href="#parameter-radkit_client_key_path" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The path to the private key for the identity certificate</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-4"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_CLIENT_KEY_PATH"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_CLIENT_KEY_PATH</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-radkit_client_private_key_password_base64"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-radkit-client-private-key-password-base64"><strong>radkit_client_private_key_password_base64</strong></p>
+<a class="ansibleOptionLink" href="#parameter-radkit_client_private_key_password_base64" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The private key password in base64 for radkit client</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-5"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-radkit_identity"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-radkit-identity"><strong>radkit_identity</strong></p>
+<a class="ansibleOptionLink" href="#parameter-radkit_identity" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The Client ID (owner email address) present in the RADKit client certificate.</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-6"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_IDENTITY"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_IDENTITY</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-radkit_service_serial"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-radkit-service-serial"><strong>radkit_service_serial</strong></p>
+<a class="ansibleOptionLink" href="#parameter-radkit_service_serial" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>The serial of the RADKit service you wish to connect through</p>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul class="simple">
+<li><p>Environment variable: <span class="target" id="index-7"></span><a class="reference internal" href="../../environment_variables.html#envvar-RADKIT_ANSIBLE_SERVICE_SERIAL"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">RADKIT_ANSIBLE_SERVICE_SERIAL</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-ssh_proxy_mode"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-ssh-proxy-mode"><strong>ssh_proxy_mode</strong></p>
+<a class="ansibleOptionLink" href="#parameter-ssh_proxy_mode" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Enable SSH proxy mode - sets ansible_host to 127.0.0.1 for all devices</p>
+<p>When enabled, devices will connect through SSH proxy instead of direct connections</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-ssh_proxy_port"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-ssh-proxy-port"><strong>ssh_proxy_port</strong></p>
+<a class="ansibleOptionLink" href="#parameter-ssh_proxy_port" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Default SSH proxy port to use when ssh_proxy_mode is enabled</p>
+<p>Can be overridden per device using ssh_proxy_port_overrides</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">2222</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-ssh_proxy_port_overrides"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-ssh-proxy-port-overrides"><strong>ssh_proxy_port_overrides</strong></p>
+<a class="ansibleOptionLink" href="#parameter-ssh_proxy_port_overrides" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Dictionary mapping device names to specific SSH proxy ports</p>
+<p>Example- device1- 2223, device2- 2224</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">{}</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-strict"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-strict"><strong>strict</strong></p>
+<a class="ansibleOptionLink" href="#parameter-strict" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>If <code class="docutils literal notranslate"><span class="pre">yes</span></code> make invalid entries a fatal error, otherwise skip and continue.</p>
+<p>Since it is possible to use facts in the expressions they might not always be available and we ignore those errors by default.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-use_extra_vars"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-radkit-inventory-parameter-use-extra-vars"><strong>use_extra_vars</strong></p>
+<a class="ansibleOptionLink" href="#parameter-use_extra_vars" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+<p><em class="ansible-option-versionadded">added in ansible-core 2.11</em></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Merge extra vars into the available variables for composition (highest precedence).</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+<p class="ansible-option-line"><strong class="ansible-option-configuration">Configuration:</strong></p>
+<ul>
+<li><p>INI entry:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[inventory_plugins]</span>
+<span class="na">use_extra_vars</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">false</span>
+</pre></div>
+</div>
+</li>
+<li><p>Environment variable: <span class="target" id="index-8"></span><a class="reference internal" href="../../environment_variables.html#envvar-ANSIBLE_INVENTORY_USE_EXTRA_VARS"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">ANSIBLE_INVENTORY_USE_EXTRA_VARS</span></code></a></p></li>
+</ul>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Examples</a><a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<div class="highlight-yaml+jinja notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic radkit_devices.yml</span>
+<span class="nt">plugin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cisco.radkit.radkit</span>
+
+<span class="c1"># Enhanced configuration with SSH proxy support</span>
+<span class="nt">plugin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cisco.radkit.radkit</span>
+<span class="nt">strict</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+
+<span class="c1"># Enable SSH proxy mode - all devices will use 127.0.0.1 as ansible_host</span>
+<span class="nt">ssh_proxy_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="nt">ssh_proxy_port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2222</span>
+
+<span class="c1"># Override specific devices with different ports/hosts</span>
+<span class="nt">ansible_host_overrides</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">special_device</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;192.168.1.100&quot;</span>
+
+<span class="nt">ansible_port_overrides</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">router1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2223</span>
+<span class="w">  </span><span class="nt">router2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2224</span>
+
+<span class="nt">ssh_proxy_port_overrides</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">router1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2223</span>
+<span class="w">  </span><span class="nt">router2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2224</span>
+
+<span class="c1"># Group devices based on attributes</span>
+<span class="nt">keyed_groups</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># group devices based on device type (ex radkit_device_type_IOS)</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">radkit_device_type</span>
+<span class="w">    </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;device_type&#39;</span>
+<span class="w">  </span><span class="c1"># group devices based on description</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">radkit_description</span>
+<span class="w">    </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;description&#39;</span>
+<span class="w">  </span><span class="c1"># group devices for SSH proxy usage</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">radkit_ssh_proxy</span>
+<span class="w">    </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;device_type&#39;</span>
+<span class="w">    </span><span class="nt">separator</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;_&#39;</span>
+
+<span class="c1"># Compose additional variables for SSH proxy</span>
+<span class="nt">compose</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Set ansible_user for SSH proxy format: device@service_serial</span>
+<span class="w">  </span><span class="nt">ansible_user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inventory_hostname + &#39;@&#39; + radkit_service_serial</span>
+<span class="w">  </span><span class="c1"># Set SSH connection args for proxy</span>
+<span class="w">  </span><span class="nt">ansible_ssh_common_args</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&#39;-o</span><span class="nv"> </span><span class="s">StrictHostKeyChecking=no</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">UserKnownHostsFile=/dev/null&#39;&quot;</span>
+
+<span class="c1"># Filter devices if needed</span>
+<span class="c1"># filter_attr: &#39;device_type&#39;</span>
+<span class="c1"># filter_pattern: &#39;IOS&#39;</span>
+</pre></div>
+</div>
+<section id="authors">
+<h3>Authors<a class="headerlink" href="#authors" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Scott Dozier (&#64;scdozier)</p></li>
+</ul>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>Configuration entries for each entry type have a low to high priority order. For example, a variable that is lower in the list will override a variable that is higher up.</p>
+</div>
+</section>
+<section id="collection-links">
+<h3>Collection links<a class="headerlink" href="#collection-links" title="Link to this heading"></a></h3>
+<ul class="ansible-links">
+<li><span><a aria-role="button" class="ansible-link reference external" href="https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible/issues" rel="noopener external" target="_blank">Issue Tracker</a></span></li>
+<li><span><a aria-role="button" class="ansible-link reference external" href="https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible" rel="noopener external" target="_blank">Repository (Sources)</a></span></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          
+
+<footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="terminal_connection.html" class="btn btn-neutral float-left" title="cisco.radkit.terminal connection" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../index_connection.html" class="btn btn-neutral float-right" title="Index of all Connection Plugins" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Cisco.</p>
+  </div>
+
+  
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script><!-- extra footer elements for Ansible beyond RTD Sphinx Theme -->
+
+</body>
+</html>

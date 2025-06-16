@@ -1,0 +1,582 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="2.16.3" name="antsibull-docs" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cisco.radkit.exec_and_wait module – Executes commands on devices using RADKit and handles interactive prompts &mdash; Cisco RADKIT Ansible Collection  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=41de9001" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/ansible.css?v=c5b67dd2" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/antsibull-minimal.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/rtd-ethical-ads.css?v=289b023e" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/images/Ansible-Mark-RGB_Black.png"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=7f41d439"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="cisco.radkit.genie_diff module – This module compares the results across multiple devices and outputs the differences." href="genie_diff_module.html" />
+    <link rel="prev" title="cisco.radkit.controlapi_device module" href="controlapi_device_module.html" /><!-- extra head elements for Ansible beyond RTD Sphinx Theme -->
+
+
+
+
+</head>
+
+<body class="wy-body-for-nav"><!-- extra body elements for Ansible beyond RTD Sphinx Theme -->
+
+<div class="DocSite-globalNav ansibleNav">
+  <ul>
+    <li><a href="https://www.ansible.com/blog" target="_blank">Blog</a></li>
+    <li><a href="https://forum.ansible.com/" target="_blank">Ansible community forum</a></li>
+    <li><a href="https://docs.ansible.com/" target="_blank">Documentation</a></li>
+  </ul>
+</div>
+
+<a class="DocSite-nav" href="/" style="padding-bottom: 30px;">
+
+  <img class="DocSiteNav-logo"
+    src="../../../_static/images/Ansible-Mark-RGB_White.png"
+    alt="Ansible Logo">
+  <div class="DocSiteNav-title">Cisco RADKIT Ansible Collection Documentation</div>
+</a>
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Cisco RADKIT Ansible Collection
+          </a><!--- Based on https://github.com/rtfd/sphinx_rtd_theme/pull/438/files -->
+
+<div class="version">
+  
+    
+  
+</div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <label class="sr-only" for="q">Search docs:</label>
+    <input type="text" class="st-default-search-input" id="q" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  
+              <p class="caption" role="heading"><span class="caption-text">Collections:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Collection Index</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Collections in the Cisco Namespace</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Cisco.Radkit</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="index.html#description">Description</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html#plugin-index">Plugin Index</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Plugin indexes:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index_connection.html">Index of all Connection Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../index_inventory.html">Index of all Inventory Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../index_module.html">Index of all Modules</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/terminal_connection_plugin_example.html">Terminal Connection Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/network_cli_connection_plugin_example.html">Network CLI Connection Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/inventory_plugin_example.html">Inventory Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/radkit_command_example.html">RADKIT Command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/genie_parsed_command_example.html">Genie Parsed Command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/genie_diff_example.html">Genie Diff</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/http_proxy_example.html">HTTP Proxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/port_forward_example.html">Port Forward</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/ssh_proxy_example.html">SSH Proxy Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/swagger_example.html">Swagger / OpenAPI</a></li>
+</ul>
+<!-- extra nav elements for Ansible beyond RTD Sphinx Theme -->
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Cisco RADKIT Ansible Collection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Collection Index</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Collections in the Cisco Namespace</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Cisco.Radkit</a></li>
+      <li class="breadcrumb-item active">cisco.radkit.exec_and_wait module – Executes commands on devices using RADKit and handles interactive prompts</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+
+  
+           <div itemprop="articleBody">
+             
+  <span class="target" id="ansible-collections-cisco-radkit-exec-and-wait-module"></span><section id="cisco-radkit-exec-and-wait-module-executes-commands-on-devices-using-radkit-and-handles-interactive-prompts">
+<h1>cisco.radkit.exec_and_wait module – Executes commands on devices using RADKit and handles interactive prompts<a class="headerlink" href="#cisco-radkit-exec-and-wait-module-executes-commands-on-devices-using-radkit-and-handles-interactive-prompts" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This module is part of the <a class="reference external" href="https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible">cisco.radkit collection</a> (version 2.0.0).</p>
+<p>It is not included in <code class="docutils literal notranslate"><span class="pre">ansible-core</span></code>.
+To check whether it is installed, run <code class="code docutils literal notranslate"><span class="pre">ansible-galaxy</span> <span class="pre">collection</span> <span class="pre">list</span></code>.</p>
+<p>To install it, use: <code class="code docutils literal notranslate"><span class="pre">ansible-galaxy</span> <span class="pre">collection</span> <span class="pre">install</span> <span class="pre">git+https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible.git</span></code>.
+You need further requirements to be able to use this module,
+see <a class="reference internal" href="#ansible-collections-cisco-radkit-exec-and-wait-module-requirements"><span class="std std-ref">Requirements</span></a> for details.</p>
+<p>To use it in a playbook, specify: <code class="code docutils literal notranslate"><span class="pre">cisco.radkit.exec_and_wait</span></code>.</p>
+</div>
+<p class="ansible-version-added">New in cisco.radkit 1.7.61</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#synopsis" id="id1">Synopsis</a></p></li>
+<li><p><a class="reference internal" href="#requirements" id="id2">Requirements</a></p></li>
+<li><p><a class="reference internal" href="#parameters" id="id3">Parameters</a></p></li>
+<li><p><a class="reference internal" href="#examples" id="id4">Examples</a></p></li>
+<li><p><a class="reference internal" href="#return-values" id="id5">Return Values</a></p></li>
+</ul>
+</nav>
+<section id="synopsis">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Synopsis</a><a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>This module runs commands on specified devices using RADKit, handling interactive prompts with pexpect.</p></li>
+<li><p>Enhanced with retry logic, progress monitoring, and better error handling.</p></li>
+</ul>
+</section>
+<section id="requirements">
+<span id="ansible-collections-cisco-radkit-exec-and-wait-module-requirements"></span><h2><a class="toc-backref" href="#id2" role="doc-backlink">Requirements</a><a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<p>The below requirements are needed on the host that executes this module.</p>
+<ul class="simple">
+<li><p>radkit</p></li>
+<li><p>pexpect</p></li>
+</ul>
+</section>
+<section id="parameters">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Parameters</a><a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Comments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-answers"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-answers"><strong>answers</strong></p>
+<a class="ansibleOptionLink" href="#parameter-answers" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>List of answers corresponding to the expected prompts.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-client_ca_path"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-client-ca-path"><strong>client_ca_path</strong></p>
+<a class="ansibleOptionLink" href="#parameter-client_ca_path" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Alternate path to client ca cert for RADKIT If the value is not specified in the task, the value of environment variable RADKIT_ANSIBLE_CLIENT_CA_PATH will be used instead.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-client_cert_path"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-client-cert-path"><strong>client_cert_path</strong></p>
+<a class="ansibleOptionLink" href="#parameter-client_cert_path" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Alternate path to client cert for RADKIT If the value is not specified in the task, the value of environment variable RADKIT_ANSIBLE_CLIENT_CERT_PATH will be used instead.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-client_key_password_b64"></div>
+<div class="ansibleOptionAnchor" id="parameter-radkit_client_private_key_password_base64"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-radkit-client-private-key-password-base64"><span id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-client-key-password-b64"></span><strong>client_key_password_b64</strong></p>
+<a class="ansibleOptionLink" href="#parameter-client_key_password_b64" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-aliases">aliases: radkit_client_private_key_password_base64</span></p>
+<p class="ansible-option-type-line"><span class="ansible-option-type">string</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Client certificate password in base64 If the value is not specified in the task, the value of environment variable RADKIT_ANSIBLE_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 will be used instead.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-client_key_path"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-client-key-path"><strong>client_key_path</strong></p>
+<a class="ansibleOptionLink" href="#parameter-client_key_path" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Alternate path to client key for RADKIT If the value is not specified in the task, the value of environment variable RADKIT_ANSIBLE_CLIENT_KEY_PATH will be used instead.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-command_retries"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-command-retries"><strong>command_retries</strong></p>
+<a class="ansibleOptionLink" href="#parameter-command_retries" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Maximum number of retries for command execution failures.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">1</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-command_timeout"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-command-timeout"><strong>command_timeout</strong></p>
+<a class="ansibleOptionLink" href="#parameter-command_timeout" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Time in seconds to wait for a command to complete.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">15</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-commands"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-commands"><strong>commands</strong></p>
+<a class="ansibleOptionLink" href="#parameter-commands" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>List of commands to execute on the device.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-continue_on_device_failure"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-continue-on-device-failure"><strong>continue_on_device_failure</strong></p>
+<a class="ansibleOptionLink" href="#parameter-continue_on_device_failure" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">boolean</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Continue processing other devices if one device fails.</p>
+<p class="ansible-option-line"><strong class="ansible-option-choices">Choices:</strong></p>
+<ul class="simple">
+<li><p><code class="ansible-option-default-bold docutils literal notranslate"><strong><span class="pre">false</span></strong></code> <span class="ansible-option-choices-default-mark">← (default)</span></p></li>
+<li><p><code class="ansible-option-choices-entry docutils literal notranslate"><span class="pre">true</span></code></p></li>
+</ul>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-delay_before_check"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-delay-before-check"><strong>delay_before_check</strong></p>
+<a class="ansibleOptionLink" href="#parameter-delay_before_check" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Delay in seconds before performing a final check on the device state.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">10</span></code></p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-device_host"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-device-host"><strong>device_host</strong></p>
+<a class="ansibleOptionLink" href="#parameter-device_host" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Hostname or IP address of the device as it appears in the RADKit inventory. Use either device_name or device_host.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-device_name"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-device-name"><strong>device_name</strong></p>
+<a class="ansibleOptionLink" href="#parameter-device_name" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Name of the device as it appears in the RADKit inventory. Use either device_name or device_host.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-identity"></div>
+<div class="ansibleOptionAnchor" id="parameter-radkit_identity"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-radkit-identity"><span id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-identity"></span><strong>identity</strong></p>
+<a class="ansibleOptionLink" href="#parameter-identity" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-aliases">aliases: radkit_identity</span></p>
+<p class="ansible-option-type-line"><span class="ansible-option-type">string</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Identity to authentiate with RADKit (<a class="reference external" href="mailto:xxxx&#37;&#52;&#48;cisco&#46;com">xxxx<span>&#64;</span>cisco<span>&#46;</span>com</a>). If the value is not specified in the task, the value of environment variable RADKIT_ANSIBLE_IDENTITY will be used instead.</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-prompts"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-prompts"><strong>prompts</strong></p>
+<a class="ansibleOptionLink" href="#parameter-prompts" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>List of expected prompts to handle interactively.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-recovery_test_command"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-recovery-test-command"><strong>recovery_test_command</strong></p>
+<a class="ansibleOptionLink" href="#parameter-recovery_test_command" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Custom command to test device responsiveness during recovery.</p>
+<p class="ansible-option-line"><strong class="ansible-option-default-bold">Default:</strong> <code class="ansible-option-default docutils literal notranslate"><span class="pre">&quot;show</span> <span class="pre">clock&quot;</span></code></p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-seconds_to_wait"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-seconds-to-wait"><strong>seconds_to_wait</strong></p>
+<a class="ansibleOptionLink" href="#parameter-seconds_to_wait" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Maximum time in seconds to wait after sending the commands before checking the device state.</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="parameter-service_serial"></div>
+<div class="ansibleOptionAnchor" id="parameter-radkit_serial"></div>
+<div class="ansibleOptionAnchor" id="parameter-radkit_service_serial"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-service-serial"><span id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-radkit-service-serial"></span><span id="ansible-collections-cisco-radkit-exec-and-wait-module-parameter-radkit-serial"></span><strong>service_serial</strong></p>
+<a class="ansibleOptionLink" href="#parameter-service_serial" title="Permalink to this option"></a><p class="ansible-option-type-line"><span class="ansible-option-aliases">aliases: radkit_serial, radkit_service_serial</span></p>
+<p class="ansible-option-type-line"><span class="ansible-option-type">string</span> / <span class="ansible-option-required">required</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Radkit service serial If the value is not specified in the task, the value of environment variable RADKIT_ANSIBLE_SERVICE_SERIAL will be used instead.</p>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Examples</a><a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<div class="highlight-yaml+jinja notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Test network connectivity (execution test, not success test)</span>
+<span class="w">      </span><span class="nt">cisco.radkit.exec_and_wait</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">device_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">inventory_hostname</span> <span class="cp">}}</span><span class="s">&quot;</span>
+<span class="w">        </span><span class="nt">commands</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;ping</span><span class="nv"> </span><span class="s">8.8.8.8</span><span class="nv"> </span><span class="s">repeat</span><span class="nv"> </span><span class="s">2&quot;</span>
+<span class="w">        </span><span class="nt">prompts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">answers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">seconds_to_wait</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
+<span class="w">        </span><span class="nt">delay_before_check</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">      </span><span class="nt">register</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ping_test</span>
+<span class="w">      </span><span class="c1"># Note: This tests command execution, ping may fail due to network policies</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Execute show commands safely</span>
+<span class="w">      </span><span class="nt">cisco.radkit.exec_and_wait</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">device_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">inventory_hostname</span> <span class="cp">}}</span><span class="s">&quot;</span>
+<span class="w">        </span><span class="nt">commands</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;show</span><span class="nv"> </span><span class="s">version&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;show</span><span class="nv"> </span><span class="s">clock&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;show</span><span class="nv"> </span><span class="s">ip</span><span class="nv"> </span><span class="s">interface</span><span class="nv"> </span><span class="s">brief&quot;</span>
+<span class="w">        </span><span class="nt">prompts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">answers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">seconds_to_wait</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+<span class="w">        </span><span class="nt">delay_before_check</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">        </span><span class="nt">command_retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">      </span><span class="nt">register</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">show_commands</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reload Router and Wait Until Available by using ansible_host</span>
+<span class="w">      </span><span class="nt">cisco.radkit.exec_and_wait</span><span class="p">:</span>
+<span class="w">        </span><span class="c1">#device_name: &quot;</span><span class="cp">{{</span><span class="nv">inventory_hostname</span><span class="cp">}}</span><span class="c1">&quot;</span>
+<span class="w">        </span><span class="nt">device_host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="cp">{{</span><span class="nv">ansible_host</span><span class="cp">}}</span><span class="s">&quot;</span>
+<span class="w">        </span><span class="nt">commands</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;reload&quot;</span>
+<span class="w">        </span><span class="nt">prompts</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;.*yes/no].*&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;.*confirm].*&quot;</span>
+<span class="w">        </span><span class="nt">answers</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;yes</span>
+<span class="s">&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;</span>
+<span class="s">&quot;</span>
+<span class="w">        </span><span class="nt">seconds_to_wait</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span><span class="w">  </span><span class="c1"># total time to wait for reload</span>
+<span class="w">        </span><span class="nt">delay_before_check</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">  </span><span class="c1"># Delay before checking terminal</span>
+<span class="w">        </span><span class="nt">recovery_test_command</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;show</span><span class="nv"> </span><span class="s">clock&quot;</span>
+<span class="w">      </span><span class="nt">register</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reload_result</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reload Router and Wait Until Available by using inventory_hostname</span>
+<span class="w">      </span><span class="nt">cisco.radkit.exec_and_wait</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">device_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="cp">{{</span><span class="nv">inventory_hostname</span><span class="cp">}}</span><span class="s">&quot;</span>
+<span class="w">        </span><span class="nt">commands</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;reload&quot;</span>
+<span class="w">        </span><span class="nt">prompts</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;.*yes/no].*&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;.*confirm].*&quot;</span>
+<span class="w">        </span><span class="nt">answers</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;yes</span>
+<span class="s">&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;</span>
+<span class="s">&quot;</span>
+<span class="w">        </span><span class="nt">seconds_to_wait</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span><span class="w">  </span><span class="c1"># total time to wait for reload</span>
+<span class="w">        </span><span class="nt">delay_before_check</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">  </span><span class="c1"># Delay before checking terminal</span>
+<span class="w">        </span><span class="nt">command_retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">        </span><span class="nt">continue_on_device_failure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="nt">register</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reload_result</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Configuration change with confirmation</span>
+<span class="w">      </span><span class="nt">cisco.radkit.exec_and_wait</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">device_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">inventory_hostname</span> <span class="cp">}}</span><span class="s">&quot;</span>
+<span class="w">        </span><span class="nt">commands</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;configure</span><span class="nv"> </span><span class="s">terminal&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;interface</span><span class="nv"> </span><span class="s">loopback</span><span class="nv"> </span><span class="s">999&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;description</span><span class="nv"> </span><span class="s">Test</span><span class="nv"> </span><span class="s">interface&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;exit&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;exit&quot;</span>
+<span class="w">        </span><span class="nt">prompts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">answers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">seconds_to_wait</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
+<span class="w">        </span><span class="nt">delay_before_check</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">        </span><span class="nt">recovery_test_command</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;show</span><span class="nv"> </span><span class="s">running-config</span><span class="nv"> </span><span class="s">interface</span><span class="nv"> </span><span class="s">loopback</span><span class="nv"> </span><span class="s">999&quot;</span>
+<span class="w">      </span><span class="nt">register</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">config_result</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reset the Connection</span>
+<span class="w">      </span><span class="c1"># The connection must be reset to allow Ansible to poll the router for connectivity</span>
+<span class="w">      </span><span class="nt">meta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reset_connection</span>
+</pre></div>
+</div>
+</section>
+<section id="return-values">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Return Values</a><a class="headerlink" href="#return-values" title="Link to this heading"></a></h2>
+<p>Common return values are documented <a class="reference external" href="https://docs.ansible.com/ansible/devel/reference_appendices/common_return_values.html#common-return-values" title="(in Ansible vdevel)"><span class="xref std std-ref">here</span></a>, the following are the fields unique to this module:</p>
+<table class="longtable ansible-option-table docutils align-default" style="width: 100%">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-device_name"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-device-name"><strong>device_name</strong></p>
+<a class="ansibleOptionLink" href="#return-device_name" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Device name (for single device compatibility)</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-devices"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-devices"><strong>devices</strong></p>
+<a class="ansibleOptionLink" href="#return-devices" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Results for each device processed</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> always</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-devices/attempt_count"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-devices-attempt-count"><strong>attempt_count</strong></p>
+<a class="ansibleOptionLink" href="#return-devices/attempt_count" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Number of recovery attempts</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-devices/device_name"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-devices-device-name"><strong>device_name</strong></p>
+<a class="ansibleOptionLink" href="#return-devices/device_name" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Name of the device</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-devices/executed_commands"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-devices-executed-commands"><strong>executed_commands</strong></p>
+<a class="ansibleOptionLink" href="#return-devices/executed_commands" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>List of commands executed</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-devices/recovery_time"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-devices-recovery-time"><strong>recovery_time</strong></p>
+<a class="ansibleOptionLink" href="#return-devices/recovery_time" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">float</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Time taken for device recovery</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-devices/status"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-devices-status"><strong>status</strong></p>
+<a class="ansibleOptionLink" href="#return-devices/status" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Execution status (SUCCESS/FAILED)</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-devices/stdout"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-devices-stdout"><strong>stdout</strong></p>
+<a class="ansibleOptionLink" href="#return-devices/stdout" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Command output</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-executed_commands"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-executed-commands"><strong>executed_commands</strong></p>
+<a class="ansibleOptionLink" href="#return-executed_commands" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">list</span> / <span class="ansible-option-elements">elements=string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Commands executed (for single device compatibility)</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-stdout"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-stdout"><strong>stdout</strong></p>
+<a class="ansibleOptionLink" href="#return-stdout" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">string</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Output of commands (for single device compatibility)</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-summary"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-summary"><strong>summary</strong></p>
+<a class="ansibleOptionLink" href="#return-summary" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">dictionary</span></p>
+</div></td>
+<td><div class="ansible-option-cell"><p>Summary of execution across all devices</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> always</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-summary/failed_devices"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-summary-failed-devices"><strong>failed_devices</strong></p>
+<a class="ansibleOptionLink" href="#return-summary/failed_devices" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Number of devices that failed</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-even"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-summary/successful_devices"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-summary-successful-devices"><strong>successful_devices</strong></p>
+<a class="ansibleOptionLink" href="#return-summary/successful_devices" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Number of devices that succeeded</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+<tr class="row-odd"><td><div class="ansible-option-indent"></div><div class="ansible-option-cell">
+<div class="ansibleOptionAnchor" id="return-summary/total_devices"></div><p class="ansible-option-title" id="ansible-collections-cisco-radkit-exec-and-wait-module-return-summary-total-devices"><strong>total_devices</strong></p>
+<a class="ansibleOptionLink" href="#return-summary/total_devices" title="Permalink to this return value"></a><p class="ansible-option-type-line"><span class="ansible-option-type">integer</span></p>
+</div></td>
+<td><div class="ansible-option-indent-desc"></div><div class="ansible-option-cell"><p>Total number of devices processed</p>
+<p class="ansible-option-line"><strong class="ansible-option-returned-bold">Returned:</strong> success</p>
+</div></td>
+</tr>
+</tbody>
+</table>
+<section id="authors">
+<h3>Authors<a class="headerlink" href="#authors" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Scott Dozier (&#64;scdozier)</p></li>
+</ul>
+</section>
+<section id="collection-links">
+<h3>Collection links<a class="headerlink" href="#collection-links" title="Link to this heading"></a></h3>
+<ul class="ansible-links">
+<li><span><a aria-role="button" class="ansible-link reference external" href="https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible/issues" rel="noopener external" target="_blank">Issue Tracker</a></span></li>
+<li><span><a aria-role="button" class="ansible-link reference external" href="https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible" rel="noopener external" target="_blank">Repository (Sources)</a></span></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          
+
+<footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="controlapi_device_module.html" class="btn btn-neutral float-left" title="cisco.radkit.controlapi_device module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="genie_diff_module.html" class="btn btn-neutral float-right" title="cisco.radkit.genie_diff module – This module compares the results across multiple devices and outputs the differences." accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Cisco.</p>
+  </div>
+
+  
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script><!-- extra footer elements for Ansible beyond RTD Sphinx Theme -->
+
+</body>
+</html>
