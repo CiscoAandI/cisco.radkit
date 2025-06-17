@@ -20,10 +20,12 @@
   shell: ansible-inventory -i /tmp/radkit_devices.yml --list
   register: inventory_output
   delegate_to: localhost
+  no_log: true
 
 - name: Parse inventory JSON
   set_fact:
     inventory_data: "{{ inventory_output.stdout | from_json }}"
+  no_log: true
 
 #- name: Clean up test inventory file
 #  file:
