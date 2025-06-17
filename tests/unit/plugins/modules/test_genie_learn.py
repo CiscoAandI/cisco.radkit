@@ -2,12 +2,33 @@
 """
 Unit tests for the genie_learn module.
 
-These tests validate basic functionality of the genie_learn module.
+These tests validate the core functionality of the genie_learn module
+by importing and testing the actual module functions.
 """
 
 import unittest
-from unittest.mock import Mock, patch
-from ansible.module_utils.basic import AnsibleModule
+from unittest.mock import Mock, patch, MagicMock
+
+# Handle import paths for both ansible-test and pytest environments
+try:
+    # Try collection import first (for ansible-test environment)
+    from ansible_collections.cisco.radkit.plugins.modules.genie_learn import (
+        run_action,
+        _process_genie_results,
+        _validate_device_parameters,
+    )
+    GENIE_LEARN_MODULE_PATH = "ansible_collections.cisco.radkit.plugins.modules.genie_learn"
+except ImportError:
+    # Fallback for local development
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
+    from plugins.modules.genie_learn import (
+        run_action,
+        _process_genie_results,
+        _validate_device_parameters,
+    )
+    GENIE_LEARN_MODULE_PATH = None
 
 
 class TestGenieLearnModule(unittest.TestCase):
@@ -15,12 +36,14 @@ class TestGenieLearnModule(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.mock_module = Mock(spec=AnsibleModule)
+        self.mock_module = Mock()
+        self.mock_radkit_service = Mock()
         
+        # Default valid parameters for learn operation
         self.default_params = {
             "models": ["ospf", "bgp"],
             "device_name": "test-device",
-            "os": "ios",
+            "os": "iosxe",
             "filter_pattern": None,
             "filter_attr": None,
             "wait_timeout": 0,
@@ -29,71 +52,60 @@ class TestGenieLearnModule(unittest.TestCase):
         }
         self.mock_module.params = self.default_params.copy()
 
-    def test_required_parameters(self):
-        """Test that required parameters are properly defined."""
-        params = self.default_params
+    def test_process_genie_results_single_device_model(self):
+        """Test _process_genie_results function with single device and model."""
+        # Mock genie results object
+        mock_genie_results = Mock()
+        mock_results_dict = {
+            "test-device": {
+                "ospf": {"process_id": 1, "router_id": "1.1.1.1"}
+            }
+        }
+        mock_genie_results.to_dict.return_value = mock_results_dict
         
-        # Check required parameters
-        self.assertIsNotNone(params["models"])
-        self.assertIsInstance(params["models"], list)
-        self.assertGreater(len(params["models"]), 0)
-
-    def test_models_parameter_validation(self):
-        """Test models parameter validation."""
-        params = self.default_params
+        # Call the function with remove_keys=True
+        result = _process_genie_results(
+            genie_results=mock_genie_results,
+            device_name="test-device", 
+            models=["ospf"],
+            remove_keys=True
+        )
         
-        # Models should be a list of strings
-        self.assertIsInstance(params["models"], list)
-        for model in params["models"]:
-            self.assertIsInstance(model, str)
+        # Should return just the model data when remove_keys=True
+        expected = {"process_id": 1, "router_id": "1.1.1.1"}
+        self.assertEqual(result, expected)
 
-    def test_device_targeting_validation(self):
-        """Test device targeting parameter validation."""
-        # Test with device_name
-        params_name = self.default_params.copy()
-        params_name["device_name"] = "router1"
-        params_name["filter_pattern"] = None
-        params_name["filter_attr"] = None
-        self.assertIsNotNone(params_name["device_name"])
+    @patch(f'{GENIE_LEARN_MODULE_PATH or "plugins.modules.genie_learn"}._get_device_inventory')
+    @patch(f'{GENIE_LEARN_MODULE_PATH or "plugins.modules.genie_learn"}._execute_genie_learn')
+    def test_run_action_successful_learn(self, mock_execute_learn, mock_get_inventory):
+        """Test run_action function with successful learn operation."""
+        # Mock inventory
+        mock_inventory = {"test-device": Mock()}
+        mock_get_inventory.return_value = mock_inventory
         
-        # Test with filter pattern
-        params_filter = self.default_params.copy()
-        params_filter["device_name"] = None
-        params_filter["filter_pattern"] = "router*"
-        params_filter["filter_attr"] = "name"
-        self.assertIsNotNone(params_filter["filter_pattern"])
-        self.assertIsNotNone(params_filter["filter_attr"])
-
-    def test_os_parameter_validation(self):
-        """Test OS parameter validation."""
-        params = self.default_params
+        # Mock genie learn results
+        mock_genie_results = Mock()
+        mock_results_dict = {
+            "test-device": {
+                "ospf": {"process_id": 1},
+                "bgp": {"as_number": 65000}
+            }
+        }
+        mock_genie_results.to_dict.return_value = mock_results_dict
+        mock_execute_learn.return_value = mock_genie_results
         
-        # OS should be a string
-        self.assertIsInstance(params["os"], str)
-
-    def test_timeout_parameters(self):
-        """Test timeout parameter validation."""
-        params = self.default_params
+        # Call the function
+        results, err = run_action(self.mock_module, self.mock_radkit_service)
         
-        # Timeouts should be non-negative integers
-        self.assertGreaterEqual(params["wait_timeout"], 0)
-        self.assertGreaterEqual(params["exec_timeout"], 0)
-
-    def test_output_processing_parameters(self):
-        """Test output processing parameter validation."""
-        params = self.default_params
+        # Verify results
+        self.assertFalse(err)
+        self.assertIn("genie_learn_result", results)
+        self.assertEqual(results["genie_learn_result"], mock_results_dict)
+        self.assertFalse(results["changed"])
         
-        # Should be boolean
-        self.assertIsInstance(params["remove_model_and_device_keys"], bool)
-
-    @patch('ansible_collections.cisco.radkit.plugins.modules.genie_learn.HAS_RADKIT', True)
-    @patch('ansible_collections.cisco.radkit.plugins.modules.genie_learn.HAS_RADKIT_GENIE', True)
-    def test_dependency_checks(self):
-        """Test that dependencies are properly checked."""
-        has_radkit = True  # Mocked value
-        has_radkit_genie = True  # Mocked value
-        self.assertTrue(has_radkit)
-        self.assertTrue(has_radkit_genie)
+        # Verify function calls
+        mock_get_inventory.assert_called_once()
+        mock_execute_learn.assert_called_once_with(mock_inventory, ["ospf", "bgp"], "iosxe")
 
 
 if __name__ == "__main__":

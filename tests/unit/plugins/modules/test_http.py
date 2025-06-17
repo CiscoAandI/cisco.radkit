@@ -2,12 +2,40 @@
 """
 Unit tests for the http module.
 
-These tests validate basic functionality of the http module.
+These tests validate the core functionality of the http module,
+specifically testing the run_action and helper functions.
 """
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 from ansible.module_utils.basic import AnsibleModule
+
+# Handle import paths for both ansible-test and pytest environments
+try:
+    # Try collection import first (for ansible-test environment)
+    from ansible_collections.cisco.radkit.plugins.modules.http import (
+        run_action,
+        _process_http_response,
+    )
+    from ansible_collections.cisco.radkit.plugins.module_utils.exceptions import (
+        AnsibleRadkitValidationError,
+        AnsibleRadkitOperationError,
+    )
+    HTTP_MODULE_PATH = "ansible_collections.cisco.radkit.plugins.modules.http"
+except ImportError:
+    # Fallback for local development
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
+    from plugins.modules.http import (
+        run_action,
+        _process_http_response,
+    )
+    from plugins.module_utils.exceptions import (
+        AnsibleRadkitValidationError,
+        AnsibleRadkitOperationError,
+    )
+    HTTP_MODULE_PATH = None
 
 
 class TestHttpModule(unittest.TestCase):
@@ -16,6 +44,7 @@ class TestHttpModule(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.mock_module = Mock(spec=AnsibleModule)
+        self.mock_radkit_service = Mock()
         
         # Default valid parameters
         self.default_params = {
@@ -30,56 +59,52 @@ class TestHttpModule(unittest.TestCase):
             "status_code": [200],
         }
         self.mock_module.params = self.default_params.copy()
-
-    def test_required_parameters(self):
-        """Test that required parameters are properly defined."""
-        params = self.default_params
         
-        # Check required parameters
-        self.assertIsNotNone(params["path"])
-        self.assertIsNotNone(params["device_name"])
-        self.assertIsNotNone(params["method"])
-
-    def test_http_methods_validation(self):
-        """Test HTTP method validation."""
-        valid_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+        # Mock HTTP response with proper structure
+        self.mock_http_response = Mock()
+        self.mock_response_result = Mock()
+        self.mock_response_result.status_code = 200
+        self.mock_response_result.data = {"status": "ok"}
+        self.mock_response_result.content = {"status": "ok"}
         
-        for method in valid_methods:
-            params = self.default_params.copy()
-            params["method"] = method
-            # Would normally validate against module spec
-            self.assertIn(method.upper(), [m.upper() for m in valid_methods])
-
-    def test_status_code_validation(self):
-        """Test status code parameter validation."""
-        params = self.default_params
-        status_codes = params["status_code"]
+        # Mock headers that can be converted to dict
+        self.mock_response_result.headers = {"Content-Type": "application/json"}
+        self.mock_response_result.cookies = {}
         
-        self.assertIsInstance(status_codes, list)
-        self.assertTrue(all(isinstance(code, int) for code in status_codes))
+        # Set up the radkit response structure
+        self.mock_http_response.result = self.mock_response_result
 
-    def test_mutually_exclusive_parameters(self):
-        """Test mutually exclusive parameter validation."""
-        # Test that json and data are mutually exclusive concepts
-        json_params = {"json": {"key": "value"}, "data": None}
-        data_params = {"data": {"key": "value"}, "json": None}
+    def test_run_action_success(self):
+        """Test successful HTTP request execution."""
+        # Mock inventory and HTTP function
+        mock_inventory = {"test-device": Mock()}
+        mock_http_func = Mock()
+        mock_http_func.return_value.wait.return_value = self.mock_http_response
         
-        # These should be mutually exclusive in actual module
-        self.assertTrue((json_params["json"] is None) != (json_params["data"] is None) or 
-                       (json_params["json"] is None and json_params["data"] is None))
+        # Set up the HTTP method on the device mock
+        mock_inventory["test-device"].http.get = mock_http_func
+        
+        self.mock_radkit_service.get_inventory_by_filter.return_value = mock_inventory
+        
+        results, err = run_action(self.mock_module, self.mock_radkit_service)
+        
+        self.assertFalse(err)
+        self.assertIn("status_code", results)
+        self.assertEqual(results["status_code"], 200)
 
-    def test_timeout_validation(self):
-        """Test timeout parameter validation."""
-        # Test with valid timeout
-        params = self.default_params.copy()
-        params["timeout"] = 30.0
-        self.assertIsInstance(params["timeout"], (int, float))
-
-    @patch('ansible_collections.cisco.radkit.plugins.modules.http.HAS_RADKIT', True)
-    def test_radkit_dependency_check(self):
-        """Test that RADKit dependency is properly checked."""
-        has_radkit = True  # Mocked value
-        self.assertTrue(has_radkit)
+    def test_process_http_response_success(self):
+        """Test successful HTTP response processing."""
+        params = {
+            "status_code": [200, 201],
+            "method": "GET",  # Add the required method parameter
+        }
+        
+        result = _process_http_response(self.mock_http_response, params)
+        
+        self.assertIn("status_code", result)
+        self.assertIn("headers", result)
+        self.assertEqual(result["status_code"], 200)
+        self.assertEqual(result["headers"], {"Content-Type": "application/json"})
 
 
 if __name__ == "__main__":

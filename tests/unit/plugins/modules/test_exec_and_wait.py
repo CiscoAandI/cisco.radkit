@@ -2,12 +2,40 @@
 """
 Unit tests for the exec_and_wait module.
 
-These tests validate basic functionality of the exec_and_wait module.
+These tests validate the core functionality of the exec_and_wait module,
+specifically testing the run_action and helper functions.
 """
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 from ansible.module_utils.basic import AnsibleModule
+
+# Handle import paths for both ansible-test and pytest environments
+try:
+    # Try collection import first (for ansible-test environment)
+    from ansible_collections.cisco.radkit.plugins.modules.exec_and_wait import (
+        run_action,
+        _validate_interactive_parameters,
+    )
+    from ansible_collections.cisco.radkit.plugins.module_utils.exceptions import (
+        AnsibleRadkitValidationError,
+        AnsibleRadkitOperationError,
+    )
+    EXEC_AND_WAIT_MODULE_PATH = "ansible_collections.cisco.radkit.plugins.modules.exec_and_wait"
+except ImportError:
+    # Fallback for local development
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
+    from plugins.modules.exec_and_wait import (
+        run_action,
+        _validate_interactive_parameters,
+    )
+    from plugins.module_utils.exceptions import (
+        AnsibleRadkitValidationError,
+        AnsibleRadkitOperationError,
+    )
+    EXEC_AND_WAIT_MODULE_PATH = None
 
 
 class TestExecAndWaitModule(unittest.TestCase):
@@ -16,6 +44,7 @@ class TestExecAndWaitModule(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.mock_module = Mock(spec=AnsibleModule)
+        self.mock_radkit_service = Mock()
         
         # Default valid parameters
         self.default_params = {
@@ -32,74 +61,24 @@ class TestExecAndWaitModule(unittest.TestCase):
         }
         self.mock_module.params = self.default_params.copy()
 
-    def test_required_parameters(self):
-        """Test that required parameters are properly defined."""
-        params = self.default_params
+    def test_parameter_validation_with_mismatched_prompts_answers(self):
+        """Test parameter validation with mismatched prompts and answers."""
+        commands = ["reload"]
+        prompts = ["Save configuration?", "Confirm reload?"]
+        answers = ["y"]  # Only one answer for two prompts
         
-        # Check that either device_name or device_host is provided
-        self.assertTrue(params["device_name"] is not None or params["device_host"] is not None)
-        
-        # Check required seconds_to_wait
-        self.assertIsInstance(params["seconds_to_wait"], int)
-        self.assertGreater(params["seconds_to_wait"], 0)
+        # Should raise validation error
+        with self.assertRaises(AnsibleRadkitValidationError):
+            _validate_interactive_parameters(commands, prompts, answers)
 
-    def test_device_targeting_validation(self):
-        """Test device targeting parameter validation."""
-        # Test with device_name
-        params_name = self.default_params.copy()
-        params_name["device_name"] = "router1"
-        params_name["device_host"] = None
-        self.assertIsNotNone(params_name["device_name"])
+    def test_validate_interactive_parameters_success(self):
+        """Test parameter validation with valid interactive parameters."""
+        commands = ["reload"]
+        prompts = ["Save configuration"]
+        answers = ["y"]
         
-        # Test with device_host
-        params_host = self.default_params.copy()
-        params_host["device_name"] = None
-        params_host["device_host"] = "192.168.1.1"
-        self.assertIsNotNone(params_host["device_host"])
-
-    def test_timing_parameters(self):
-        """Test timing parameter validation."""
-        params = self.default_params
-        
-        # Validate timing parameters are positive integers
-        self.assertGreaterEqual(params["seconds_to_wait"], 0)
-        self.assertGreaterEqual(params["delay_before_check"], 0)
-        self.assertGreaterEqual(params["command_timeout"], 0)
-        self.assertGreaterEqual(params["command_retries"], 0)
-
-    def test_command_parameters(self):
-        """Test command parameter validation."""
-        params = self.default_params
-        
-        # Commands should be a list if provided
-        if params["commands"] is not None:
-            self.assertIsInstance(params["commands"], list)
-        
-        # Answers should be a list if provided
-        if params["answers"] is not None:
-            self.assertIsInstance(params["answers"], list)
-        
-        # Prompts should be a list if provided
-        if params["prompts"] is not None:
-            self.assertIsInstance(params["prompts"], list)
-
-    def test_recovery_command_validation(self):
-        """Test recovery command parameter."""
-        params = self.default_params
-        recovery_cmd = params["recovery_test_command"]
-        
-        self.assertIsInstance(recovery_cmd, str)
-        # Default should be carriage return
-        self.assertEqual(recovery_cmd, "\r")
-
-    @patch('ansible_collections.cisco.radkit.plugins.modules.exec_and_wait.HAS_RADKIT', True)
-    @patch('ansible_collections.cisco.radkit.plugins.modules.exec_and_wait.HAS_PEXPECT', True)
-    def test_dependency_checks(self):
-        """Test that dependencies are properly checked."""
-        has_radkit = True  # Mocked value
-        has_pexpect = True  # Mocked value
-        self.assertTrue(has_radkit)
-        self.assertTrue(has_pexpect)
+        # Should not raise any exception
+        _validate_interactive_parameters(commands, prompts, answers)
 
 
 if __name__ == "__main__":

@@ -2,12 +2,33 @@
 """
 Unit tests for Ansible genie_parsed_command module.
 
-These tests validate basic functionality of the genie_parsed_command module.
+These tests validate the core functionality of the genie_parsed_command module
+by importing and testing the actual module functions.
 """
 
 import unittest
-from unittest.mock import Mock, patch
-from ansible.module_utils.basic import AnsibleModule
+from unittest.mock import Mock, patch, MagicMock
+
+# Handle import paths for both ansible-test and pytest environments
+try:
+    # Try collection import first (for ansible-test environment)
+    from ansible_collections.cisco.radkit.plugins.modules.genie_parsed_command import (
+        run_action,
+        _parse_genie_results,
+        _execute_single_device_commands,
+    )
+    GENIE_PARSED_COMMAND_MODULE_PATH = "ansible_collections.cisco.radkit.plugins.modules.genie_parsed_command"
+except ImportError:
+    # Fallback for local development
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
+    from plugins.modules.genie_parsed_command import (
+        run_action,
+        _parse_genie_results,
+        _execute_single_device_commands,
+    )
+    GENIE_PARSED_COMMAND_MODULE_PATH = None
 
 
 class TestGenieParseCommandModule(unittest.TestCase):
@@ -15,12 +36,14 @@ class TestGenieParseCommandModule(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.mock_module = Mock(spec=AnsibleModule)
+        self.mock_module = Mock()
+        self.mock_radkit_service = Mock()
         
+        # Default valid parameters for parsed command operation
         self.default_params = {
             "commands": ["show version", "show ip interface brief"],
             "device_name": "test-device",
-            "os": "ios",
+            "os": "iosxe",
             "filter_pattern": None,
             "filter_attr": None,
             "wait_timeout": 0,
@@ -29,74 +52,76 @@ class TestGenieParseCommandModule(unittest.TestCase):
         }
         self.mock_module.params = self.default_params.copy()
 
-    def test_required_parameters(self):
-        """Test that required parameters are properly defined."""
-        params = self.default_params
+    @patch(f'{GENIE_PARSED_COMMAND_MODULE_PATH or "plugins.modules.genie_parsed_command"}.radkit_genie')
+    def test_parse_genie_results_with_os_specified(self, mock_radkit_genie):
+        """Test _parse_genie_results function with specific OS."""
+        # Mock inventory and response
+        mock_inventory = {"test-device": Mock()}
+        mock_response = Mock()
+        mock_radkit_result = {"test-device": {"show version": Mock()}}
         
-        # Check required parameters
-        self.assertIsNotNone(params["commands"])
-        self.assertIsInstance(params["commands"], list)
-        self.assertGreater(len(params["commands"]), 0)
+        # Mock genie parsed result
+        mock_genie_result = Mock()
+        mock_genie_result.to_dict.return_value = {
+            "test-device": {
+                "show version": {"version": {"version": "16.09.03"}}
+            }
+        }
+        mock_radkit_genie.parse.return_value = mock_genie_result
+        
+        params = {
+            "os": "iosxe",
+            "device_name": "test-device",
+            "commands": ["show version"],
+            "remove_cmd_and_device_keys": False
+        }
+        
+        # Call the function
+        result = _parse_genie_results(params, mock_radkit_result, mock_response, mock_inventory)
+        
+        # Verify results
+        expected = {
+            "test-device": {
+                "show version": {"version": {"version": "16.09.03"}}
+            }
+        }
+        self.assertEqual(result, expected)
+        mock_radkit_genie.parse.assert_called_once_with(mock_response, os="iosxe")
 
-    def test_device_targeting_validation(self):
-        """Test device targeting validation."""
-        params = self.default_params
+    @patch(f'{GENIE_PARSED_COMMAND_MODULE_PATH or "plugins.modules.genie_parsed_command"}._execute_single_device_commands')
+    @patch(f'{GENIE_PARSED_COMMAND_MODULE_PATH or "plugins.modules.genie_parsed_command"}._parse_genie_results')
+    def test_run_action_single_device(self, mock_parse_genie, mock_execute_single):
+        """Test run_action function for single device command execution."""
+        # Mock the execution response
+        mock_radkit_result = {"test-device": {"show version": Mock()}}
+        mock_ansible_result = [{
+            "device_name": "test-device",
+            "command": "show version", 
+            "exec_status": "SUCCESS",
+            "exec_status_message": "Command executed successfully"
+        }]
+        mock_response = Mock()
+        mock_execute_single.return_value = (mock_radkit_result, mock_ansible_result, mock_response)
         
-        # Either device_name or filter_pattern should be provided
-        if params["device_name"]:
-            self.assertIsInstance(params["device_name"], str)
-        elif params["filter_pattern"]:
-            self.assertIsInstance(params["filter_pattern"], str)
-        else:
-            # At least one should be provided
-            self.assertTrue(params["device_name"] or params["filter_pattern"])
-
-    def test_commands_parameter_validation(self):
-        """Test commands parameter validation."""
-        params = self.default_params
+        # Mock parsed results
+        mock_parsed_result = {"test-device": {"show version": {"version": {"version": "16.09.03"}}}}
+        mock_parse_genie.return_value = mock_parsed_result
         
-        # Commands should be a list of strings
-        self.assertIsInstance(params["commands"], list)
-        for command in params["commands"]:
-            self.assertIsInstance(command, str)
-            self.assertGreater(len(command.strip()), 0)
-
-    def test_os_parameter_validation(self):
-        """Test OS parameter validation."""
-        params = self.default_params
+        # Mock inventory
+        self.mock_radkit_service.get_inventory_by_filter.return_value = {"test-device": Mock()}
         
-        if params["os"]:
-            self.assertIsInstance(params["os"], str)
-            # Common network OS values
-            valid_os_types = ["ios", "iosxe", "nxos", "iosxr", "asa", "junos"]
-            # Note: This is just a sample validation, actual module may support more
-
-    def test_timeout_parameters(self):
-        """Test timeout parameter validation."""
-        params = self.default_params
+        # Call the function
+        results, err = run_action(self.mock_module, self.mock_radkit_service)
         
-        # Timeout parameters should be non-negative integers
-        self.assertIsInstance(params["wait_timeout"], int)
-        self.assertGreaterEqual(params["wait_timeout"], 0)
+        # Verify results
+        self.assertFalse(err)
+        self.assertIn("genie_parsed_result", results)
+        self.assertEqual(results["genie_parsed_result"], mock_parsed_result)
+        self.assertFalse(results["changed"])
         
-        self.assertIsInstance(params["exec_timeout"], int)
-        self.assertGreaterEqual(params["exec_timeout"], 0)
-
-    def test_output_processing_parameters(self):
-        """Test output processing parameter validation."""
-        params = self.default_params
-        
-        # Boolean parameters
-        self.assertIsInstance(params["remove_cmd_and_device_keys"], bool)
-
-    @patch('ansible_collections.cisco.radkit.plugins.modules.genie_parsed_command.HAS_RADKIT', True)
-    @patch('ansible_collections.cisco.radkit.plugins.modules.genie_parsed_command.HAS_RADKIT_GENIE', True)
-    def test_dependency_checks(self):
-        """Test that dependencies are properly checked."""
-        has_radkit = True  # Mocked value
-        has_radkit_genie = True  # Mocked value
-        self.assertTrue(has_radkit)
-        self.assertTrue(has_radkit_genie)
+        # Verify function calls
+        mock_execute_single.assert_called_once()
+        mock_parse_genie.assert_called_once()
 
 
 if __name__ == "__main__":
