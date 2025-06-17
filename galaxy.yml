@@ -17,6 +17,7 @@ readme: README.md
 # @nicks:irc/im.site#channel'
 authors:
 - Scott Dozier <scdozier@cisco.com>
+- Ramses Smeyers (@rsmeyers)
 
 ### OPTIONAL but strongly recommended
 # A short summary description of the collection
@@ -24,8 +25,6 @@ description: Collection of plugins and modules for interacting with Cisco RADKit
 
 # Either a single license or a list of licenses for content inside of a collection. Ansible Galaxy currently only
 # accepts L(SPDX,https://spdx.org/licenses/) licenses. This key is mutually exclusive with 'license_file'
-license:
-- GPL-2.0-or-later
 
 # The path to the license file for the collection. This path is relative to the root of the collection. This key is
 # mutually exclusive with 'license'
@@ -35,7 +34,6 @@ license_file: 'LICENSE'
 # requirements as 'namespace' and 'name'
 tags:
 - radkit
-- radkit-ansible
 - cisco
 - networking
 
@@ -47,16 +45,16 @@ tags:
 dependencies: { 'ansible.netcommon': '>=4.0.0' }
 
 # The URL of the originating SCM repository
-repository:  'https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible'
+repository:  'https://github.com/CiscoAandI/cisco.radkit'
 
 # The URL to any online docs
-documentation: 'https://wwwin-github.cisco.com/pages/scdozier/cisco.radkit-ansible/'
+documentation: 'https://github.com/CiscoAandI/cisco.radkit'
 
 # The URL to the homepage of the collection/project
-homepage: 'https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible'
+homepage: 'https://github.com/CiscoAandI/cisco.radkit'
 
 # The URL to the collection issue tracker
-issues: 'https://wwwin-github.cisco.com/scdozier/cisco.radkit-ansible/issues'
+issues: 'https://github.com/CiscoAandI/cisco.radkit/issues'
 
 # A list of file glob-like patterns used to filter any files or directories that should not be included in the build
 # artifact. A pattern is matched from the relative path of the file or directory of the collection directory. This
