@@ -35,6 +35,18 @@ sys.path.insert(
 from network_cli import Connection as NetworkCliConnection
 
 
+# Patch: Dummy subclass to satisfy abstract methods
+class DummyNetworkCliConnection(NetworkCliConnection):
+    def __init__(self, play_context, new_stdin, *args, **kwargs):
+        # Set _network_os before calling super().__init__
+        self._network_os = getattr(play_context, 'network_os', None)
+        super().__init__(play_context, new_stdin, *args, **kwargs)
+
+    def fetch_file(self, *a, **kw): pass
+    def put_file(self, *a, **kw): pass
+    def queue_message(self, *a, **kw): pass  # Dummy for test
+
+
 @pytest.fixture(name="conn")
 def plugin_fixture(monkeypatch):
     pc = PlayContext()
@@ -53,8 +65,8 @@ def plugin_fixture(monkeypatch):
     monkeypatch.setattr(terminal_loader, "get", get_terminal)
     monkeypatch.setattr(cliconf_loader, "get", get_cliconf)
 
-    # Create the connection directly
-    conn = NetworkCliConnection(pc, "/dev/null")
+    # Use dummy subclass
+    conn = DummyNetworkCliConnection(pc, "/dev/null")
 
     # Set required attributes that would normally be set by the plugin loader
     conn._load_name = "cisco.radkit.network_cli"
@@ -82,7 +94,7 @@ def test_network_cli_invalid_os(network_os, monkeypatch):
 
     # For invalid network_os, the plugin should raise an exception during initialization
     with pytest.raises(AnsibleConnectionFailure):
-        NetworkCliConnection(pc, "/dev/null")
+        DummyNetworkCliConnection(pc, "/dev/null")
 
 
 # Removed test_network_cli__connect - configuration issues with plugin options

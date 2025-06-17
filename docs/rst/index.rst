@@ -169,7 +169,7 @@ Quick Start Guide
   router2 ansible_host=10.1.2.1
   router3 ansible_host=10.1.3.1
 
-**Important**: 
+**Important**:
 
 - **SSH Proxy**: Device hostnames in inventory must match device names in your RADKit service. Use ``127.0.0.1`` as ``ansible_host`` since connections go through the local proxy.
 - **Legacy Plugins**: Both hostname and IP address must match exactly what is configured in your RADKit service inventory.
@@ -208,7 +208,7 @@ Quick Start Guide
         poll: 0
         register: ssh_proxy_job
         failed_when: false
-      
+
       - name: Wait for SSH proxy to become available
         ansible.builtin.wait_for:
           port: "{{ ssh_proxy_port }}"

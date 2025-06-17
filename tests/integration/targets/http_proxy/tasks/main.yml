@@ -1,0 +1,71 @@
+# Test HTTP Proxy module
+- name: Test HTTP Proxy configuration before starting
+  cisco.radkit.http_proxy:
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    http_proxy_port: "4001"
+    socks_proxy_port: "4000"
+    proxy_username: "radkit"
+    proxy_password: "Radkit999"
+    test: true
+  register: http_proxy_test_result
+  delegate_to: localhost
+
+- name: Start HTTP proxy
+  cisco.radkit.http_proxy:
+    client_key_password_b64: "{{ radkit_client_private_key_password_base64 }}"
+    identity: "{{ radkit_identity }}"
+    service_serial: "{{ radkit_service_serial }}"
+    http_proxy_port: "4001"
+    socks_proxy_port: "4000"
+    proxy_username: "radkit"
+    proxy_password: "Radkit999"
+  register: http_proxy_result
+  delegate_to: localhost
+  async: 60
+  poll: 0
+
+- name: Wait for HTTP proxy to become available
+  ansible.builtin.wait_for:
+    port: 4001
+    host: 127.0.0.1
+    delay: 3
+    timeout: 30
+  delegate_to: localhost
+
+- name: Add proxy hostname to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ http_device_name_1 }}.{{ radkit_service_serial }}.proxy"
+    state: present
+    backup: yes
+  become: true
+  delegate_to: localhost
+
+- name: Test HTTP request through proxy
+  uri:
+    url: "https://{{ http_device_name_1 }}.{{ radkit_service_serial }}.proxy/bin/2aa346c9-353e-480f-b2c6-fa2bbea1cfd7"
+    method: GET
+    timeout: 30
+    use_proxy: yes
+    validate_certs: no
+  environment:
+    http_proxy: "http://radkit:Radkit999@127.0.0.1:4001"
+    https_proxy: "http://radkit:Radkit999@127.0.0.1:4001"
+  register: proxy_response
+  delegate_to: localhost
+
+- name: Remove proxy hostname from /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ http_device_name_1 }}.{{ radkit_service_serial }}.proxy"
+    state: absent
+  become: true
+  delegate_to: localhost
+
+- assert:
+    that:
+      - http_proxy_test_result is not failed
+      - http_proxy_result is changed
+      - proxy_response.status == 200

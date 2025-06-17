@@ -1,0 +1,42 @@
+# Test radkit inventory plugin
+- name: Create test inventory file for radkit plugin
+  copy:
+    content: |
+      plugin: cisco.radkit.radkit
+      radkit_service_serial: "{{ radkit_service_serial }}"
+      radkit_identity: "{{ radkit_identity }}"
+      radkit_client_private_key_password_base64: "{{ radkit_client_private_key_password_base64 }}"
+      keyed_groups:
+        - key: radkit_device_type
+          prefix: radkit_device_type
+        - key: radkit_device_type
+          prefix: radkit_proxy
+      compose:
+        ansible_host: ansible_host
+    dest: /tmp/radkit_devices.yml
+  delegate_to: localhost
+
+- name: Test inventory plugin by listing hosts
+  shell: ansible-inventory -i /tmp/radkit_devices.yml --list
+  register: inventory_output
+  delegate_to: localhost
+  no_log: true
+
+- name: Parse inventory JSON
+  set_fact:
+    inventory_data: "{{ inventory_output.stdout | from_json }}"
+  no_log: true
+
+#- name: Clean up test inventory file
+#  file:
+#    path: /tmp/radkit_devices.yml
+#    state: absent
+#  delegate_to: localhost
+
+- assert:
+    that:
+      - inventory_data._meta is defined
+      - inventory_data._meta.hostvars is defined
+      - inventory_data._meta.hostvars | length > 0
+      - "'{{ ios_device_name_1 }}' in inventory_data._meta.hostvars"
+    fail_msg: "RADKit inventory plugin failed to return expected devices. Got: {{ inventory_data }}"

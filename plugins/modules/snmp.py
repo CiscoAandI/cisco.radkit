@@ -383,6 +383,7 @@ def _execute_snmp_operation(
     Raises:
         AnsibleRadkitOperationError: If SNMP operation fails
     """
+    _validate_snmp_action(action)
     return_data = []
 
     for device_name in inventory:
@@ -406,10 +407,14 @@ def _execute_snmp_operation(
                 kwargs["concurrency"] = concurrency
 
             # Execute SNMP operation
-            if len(oids) == 1:
-                snmp_results = snmp_func(oids[0], **kwargs).wait().result
-            else:
-                snmp_results = snmp_func(oids, **kwargs).wait().result
+            try:
+                if len(oids) == 1:
+                    snmp_results = snmp_func(oids[0], **kwargs).wait().result
+                else:
+                    snmp_results = snmp_func(oids, **kwargs).wait().result
+            except Exception as e:
+                logger.error(f"SNMP function raised exception: {e}")
+                raise AnsibleRadkitOperationError(f"SNMP operation failed on device {device_name}: {e}")
 
             # Process results based on output format
             if include_errors:
@@ -460,6 +465,8 @@ def _execute_snmp_operation(
         except AttributeError as e:
             logger.error(f"Invalid SNMP action '{action}': {e}")
             raise AnsibleRadkitValidationError(f"Invalid SNMP action '{action}': {e}")
+        except AnsibleRadkitOperationError:
+            raise
         except Exception as e:
             logger.error(f"SNMP operation failed on device {device_name}: {e}")
             raise AnsibleRadkitOperationError(
