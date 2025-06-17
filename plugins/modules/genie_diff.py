@@ -14,6 +14,7 @@ for change tracking and network automation workflows.
 from __future__ import absolute_import, division, print_function
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+import traceback
 
 __metaclass__ = type
 
@@ -123,70 +124,40 @@ __metaclass__ = type
 GENIE_PARSED_RESULT_KEY = "genie_parsed_result"
 
 
-def _extract_genie_result(result_data: Union[Dict[str, Any], Any]) -> Any:
-    """Extract Genie parsed result from module output.
-
-    Args:
-        result_data: Result data that may contain genie_parsed_result
-
-    Returns:
-        The extracted Genie result data
-    """
+def _extract_genie_result(result_data):
+    """Extract Genie parsed result from module output."""
     if isinstance(result_data, dict) and GENIE_PARSED_RESULT_KEY in result_data:
-        return result_data[GENIE_PARSED_RESULT_KEY]
+        return result_data
     return result_data
 
 
-def _perform_genie_diff(result_a: Any, result_b: Any, diff_snapshots: bool) -> str:
-    """Perform Genie diff operation.
-
-    Args:
-        result_a: First result set for comparison
-        result_b: Second result set for comparison
-        diff_snapshots: Whether to use snapshot diff mode
-
-    Returns:
-        String representation of the diff results
-
-    Raises:
-        ImportError: If radkit_genie is not available
-        Exception: If diff operation fails
-    """
+def _perform_genie_diff(result_a, result_b, diff_snapshots):
+    """Perform Genie diff operation using diff_dicts."""
     if not radkit_genie:
         raise ImportError("radkit_genie module is required for this operation")
 
     try:
-        if diff_snapshots:
-            logger.info("Performing snapshot diff between results")
-            diff_result = radkit_genie.diff_snapshots(result_a, result_b)
-        else:
-            logger.info("Performing device diff between results")
-            diff_result = radkit_genie.diff(result_a, result_b)
-
+        # Extract the actual parsed dictionaries for diff_dicts
+        dict_a = result_a.get('genie_parsed_result', result_a) if isinstance(result_a, dict) else result_a
+        dict_b = result_b.get('genie_parsed_result', result_b) if isinstance(result_b, dict) else result_b
+        
+        # Use diff_dicts for regular dictionaries
+        diff_result = radkit_genie.diff_dicts(dict_a, dict_b)
+        
         return str(diff_result)
     except Exception as e:
-        logger.error(f"Genie diff operation failed: {e}")
-        raise
+        raise Exception(f"Genie diff operation failed: {e}")
 
 
-def run_action(module: AnsibleModule) -> Tuple[Dict[str, Any], bool]:
-    """Execute Genie diff operations.
-
-    Args:
-        module: Ansible module instance
-
-    Returns:
-        Tuple of (results dictionary, error boolean)
-    """
+def run_action(module):
+    """Execute Genie diff operations."""
     try:
         params = module.params
-
+        
         # Extract Genie results from input parameters
         result_a = _extract_genie_result(params["result_a"])
         result_b = _extract_genie_result(params["result_b"])
         diff_snapshots = params["diff_snapshots"]
-
-        logger.info(f"Starting Genie diff operation (snapshot mode: {diff_snapshots})")
 
         # Perform the diff operation
         diff_result = _perform_genie_diff(result_a, result_b, diff_snapshots)
@@ -199,14 +170,11 @@ def run_action(module: AnsibleModule) -> Tuple[Dict[str, Any], bool]:
             "changed": False,
         }
 
-        logger.info("Genie diff operation completed successfully")
         return results, False
 
     except ImportError as e:
-        logger.error(f"Missing required dependency: {e}")
         return {"msg": f"Missing required dependency: {e}", "changed": False}, True
     except Exception as e:
-        logger.error(f"Genie diff operation failed: {e}")
         return {"msg": str(e), "changed": False}, True
 
 
