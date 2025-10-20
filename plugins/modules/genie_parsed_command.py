@@ -253,7 +253,10 @@ def _execute_multiple_device_commands(
 def _parse_genie_results(
     params: Dict[str, Any], radkit_result: Dict[str, Any], response: Any, inventory: Any
 ) -> Dict[str, Any]:
-    """Parse command results using Genie parsers."""
+    """Parse command results using Genie parsers.
+
+    Supports both RADKit 1.9+ inline_results mode (default) and legacy GenieResult mode.
+    """
     if not HAS_RADKIT_GENIE:
         raise AnsibleRadkitValidationError("radkit_genie is required for parsing")
 
@@ -266,21 +269,36 @@ def _parse_genie_results(
     else:
         genie_parsed_result = radkit_genie.parse(response, os=params["os"])
 
+    # RADKit 1.9+ inline_results mode: parse() returns None, results are in response.result.parsed
+    # Legacy mode: parse() returns GenieResult object with to_dict() method
+    if genie_parsed_result is None:
+        # RADKit 1.9+ inline_results mode - extract parsed data from response
+        parsed_dict = {}
+        for device_name, device_results in radkit_result.items():
+            parsed_dict[device_name] = {}
+            for command, cmd_result in device_results.items():
+                if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
+                    parsed_dict[device_name][command] = cmd_result.parsed
+                else:
+                    # Fallback if parsed attribute doesn't exist
+                    parsed_dict[device_name][command] = {}
+    else:
+        # Legacy mode - use to_dict() method
+        parsed_dict = genie_parsed_result.to_dict()
+
     # Process results based on removal preferences
     if params["remove_cmd_and_device_keys"]:
         if params.get("device_name") and len(radkit_result.keys()) == 1:
-            return genie_parsed_result.to_dict()[params["device_name"]][
-                params["commands"][0]
-            ]
+            return parsed_dict[params["device_name"]][params["commands"][0]]
         elif (
             not params.get("device_name")
-            and len(genie_parsed_result.keys()) == 1
+            and len(parsed_dict.keys()) == 1
             and len(params["commands"]) == 1
         ):
-            device_key = list(genie_parsed_result.keys())[0]
-            return genie_parsed_result.to_dict()[device_key][params["commands"][0]]
+            device_key = list(parsed_dict.keys())[0]
+            return parsed_dict[device_key][params["commands"][0]]
 
-    return genie_parsed_result.to_dict()
+    return parsed_dict
 
 
 def run_action(

@@ -1,18 +1,18 @@
 [tool.poetry]
 name = "ansible-cisco-radkit"
-version = "2.0.0"
+version = "2.1.0"
 description = "Ansible Galaxy Collection for Cisco RADKit"
 authors = ["Scott Dozier <scdozier@cisco.com>"]
 readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = ">= 3.9, < 3.12"
+python = ">= 3.10, < 3.14"
 ansible = "^8.7.0"
 pproxy = "^2.7.0"
 httpx = "^0.27.2"
-cisco-radkit-client = "^1.8.5"
-cisco-radkit-genie = "^1.8.5"
+cisco-radkit-client = "^1.9.0"
+cisco-radkit-genie = "^1.9.0"
 
 [tool.poetry.group.dev.dependencies]
 ansible-lint = "^6.0.0"

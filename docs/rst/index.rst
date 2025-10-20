@@ -10,8 +10,8 @@ This cisco.radkit Ansible collection provides plugins and modules for network au
 
 Requirements
 ################
--  `RADKIT <https://radkit.cisco.com>`__ 1.8.5 or higher
-- Python >= 3.9
+-  `RADKIT <https://radkit.cisco.com>`__ 1.9.0 or higher
+- Python >= 3.10 (supports 3.10, 3.11, 3.12, 3.13)
 
 Installation
 ################

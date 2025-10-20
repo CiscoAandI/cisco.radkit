@@ -271,6 +271,8 @@ def _process_genie_results(
 ) -> Dict[str, Any]:
     """Process Genie learn results into the appropriate format.
 
+    Supports both RADKit 1.9+ inline_results mode and legacy GenieResult mode.
+
     Args:
         genie_results: Raw Genie learn results
         device_name: Device name for single device operations
@@ -280,7 +282,16 @@ def _process_genie_results(
     Returns:
         Processed results dictionary
     """
-    results_dict = genie_results.to_dict()
+    # Handle both inline_results mode (returns dict) and legacy mode (returns GenieResult)
+    if hasattr(genie_results, 'to_dict'):
+        # Legacy mode - GenieResult object with to_dict() method
+        results_dict = genie_results.to_dict()
+    elif isinstance(genie_results, dict):
+        # RADKit 1.9+ inline_results mode - already a dict
+        results_dict = genie_results
+    else:
+        # Fallback - try to use as-is
+        results_dict = genie_results
 
     if remove_keys and len(results_dict.keys()) == 1 and len(models) == 1:
         if device_name:
