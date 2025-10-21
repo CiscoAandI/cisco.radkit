@@ -200,12 +200,13 @@ def _execute_single_device_commands(
             "device_name": cmd_result.device.name,
             "command": cmd_result.command,
             "exec_status": cmd_result.status.value,
-            "exec_status_message": cmd_result.status_message,
+            "exec_status_message": getattr(cmd_result, "status_message", ""),
         }
         ansible_results.append(cmd_result_dict)
 
         if cmd_result.status.value != "SUCCESS":
-            raise AnsibleRadkitOperationError(f"{cmd_result.status_message}")
+            status_msg = getattr(cmd_result, "status_message", "Command execution failed")
+            raise AnsibleRadkitOperationError(f"{status_msg}")
 
     return radkit_result, ansible_results, response
 
@@ -243,7 +244,7 @@ def _execute_multiple_device_commands(
                 "device_name": cmd_result.device.name,
                 "command": cmd_result.command,
                 "exec_status": cmd_result.status.value,
-                "exec_status_message": cmd_result.status_message,
+                "exec_status_message": getattr(cmd_result, "status_message", ""),
             }
             ansible_results.append(cmd_result_dict)
 

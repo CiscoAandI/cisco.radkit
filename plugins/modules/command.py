@@ -287,8 +287,9 @@ def _execute_on_single_device(
         radkit_result = response[device_name]
 
         if radkit_result.status.value != "SUCCESS":
+            status_msg = getattr(radkit_result, "status_message", "Unknown error")
             raise AnsibleRadkitOperationError(
-                f"Command execution failed on {device_name}: {radkit_result.status_message}"
+                f"Command execution failed on {device_name}: {status_msg}"
             )
 
         return _format_command_results(radkit_result, remove_prompts)
