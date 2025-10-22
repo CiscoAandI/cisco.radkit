@@ -188,10 +188,20 @@ def _execute_single_device_commands(
             DEVICE_NOT_FOUND_MSG.format(attr="name", pattern=params["device_name"])
         )
 
-    response = radkit_service.exec_command(
-        params["commands"], inventory, return_full_response=True
-    )
-    radkit_result = response.result[params["device_name"]]
+    # RADKit 1.9: Ensure commands is always a list for iterable response
+    commands = params["commands"] if isinstance(params["commands"], list) else [params["commands"]]
+
+    # Call inventory.exec() directly to support list of commands (exec_command only supports single string)
+    exec_timeout = int(radkit_service.exec_timeout)
+    wait_timeout = int(radkit_service.wait_timeout)
+
+    if wait_timeout == 0:
+        response = inventory.exec(commands, timeout=exec_timeout).wait()
+    else:
+        response = inventory.exec(commands, timeout=exec_timeout).wait(wait_timeout)
+
+    # RADKit 1.9: Use response[device_name] for iterable access (same as command.py)
+    radkit_result = response[params["device_name"]]
 
     ansible_results = []
     for command in radkit_result:
@@ -226,9 +236,18 @@ def _execute_multiple_device_commands(
             )
         )
 
-    response = radkit_service.exec_command(
-        params["commands"], inventory, return_full_response=True
-    )
+    # RADKit 1.9: Ensure commands is always a list for iterable response
+    commands = params["commands"] if isinstance(params["commands"], list) else [params["commands"]]
+
+    # Call inventory.exec() directly to support list of commands (exec_command only supports single string)
+    exec_timeout = int(radkit_service.exec_timeout)
+    wait_timeout = int(radkit_service.wait_timeout)
+
+    if wait_timeout == 0:
+        response = inventory.exec(commands, timeout=exec_timeout).wait()
+    else:
+        response = inventory.exec(commands, timeout=exec_timeout).wait(wait_timeout)
+
     radkit_result = response.result
 
     # Check if all devices failed
@@ -285,8 +304,8 @@ def _parse_genie_results(
             # Multiple devices case - radkit_result is dict of device_name -> SingleExecResponse
             for device_name, device_results in radkit_result.items():
                 parsed_dict[device_name] = {}
-                # Use params["commands"] to iterate (RADKit 1.9 SingleExecResponse not iterable)
-                for command in params["commands"]:
+                # RADKit 1.9: Iterate over SingleExecResponse directly (it's iterable by command)
+                for command in device_results:
                     cmd_result = device_results[command]
                     if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
                         parsed_dict[device_name][command] = cmd_result.parsed
@@ -298,8 +317,8 @@ def _parse_genie_results(
             device_name = params.get("device_name")
             if device_name:
                 parsed_dict[device_name] = {}
-                # Use params["commands"] to get the list of commands (RADKit 1.9 SingleExecResponse not iterable)
-                for command in params["commands"]:
+                # RADKit 1.9: SingleExecResponse IS iterable by command (same as command.py pattern)
+                for command in radkit_result:
                     cmd_result = radkit_result[command]
                     if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
                         parsed_dict[device_name][command] = cmd_result.parsed
@@ -308,15 +327,17 @@ def _parse_genie_results(
 
     # Process results based on removal preferences
     if params["remove_cmd_and_device_keys"]:
+        # Normalize commands to list for indexing
+        commands_list = params["commands"] if isinstance(params["commands"], list) else [params["commands"]]
         if params.get("device_name") and len(parsed_dict.keys()) == 1:
-            return parsed_dict[params["device_name"]][params["commands"][0]]
+            return parsed_dict[params["device_name"]][commands_list[0]]
         elif (
             not params.get("device_name")
             and len(parsed_dict.keys()) == 1
-            and len(params["commands"]) == 1
+            and len(commands_list) == 1
         ):
             device_key = list(parsed_dict.keys())[0]
-            return parsed_dict[device_key][params["commands"][0]]
+            return parsed_dict[device_key][commands_list[0]]
 
     return parsed_dict
 
