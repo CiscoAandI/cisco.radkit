@@ -188,10 +188,20 @@ def _execute_single_device_commands(
             DEVICE_NOT_FOUND_MSG.format(attr="name", pattern=params["device_name"])
         )
 
-    response = radkit_service.exec_command(
-        params["commands"], inventory, return_full_response=True
-    )
-    radkit_result = response.result[params["device_name"]]
+    # RADKit 1.9: Ensure commands is always a list for iterable response
+    commands = params["commands"] if isinstance(params["commands"], list) else [params["commands"]]
+
+    # Call inventory.exec() directly to support list of commands (exec_command only supports single string)
+    exec_timeout = int(radkit_service.exec_timeout)
+    wait_timeout = int(radkit_service.wait_timeout)
+
+    if wait_timeout == 0:
+        response = inventory.exec(commands, timeout=exec_timeout).wait()
+    else:
+        response = inventory.exec(commands, timeout=exec_timeout).wait(wait_timeout)
+
+    # RADKit 1.9: Use response[device_name] for iterable access (same as command.py)
+    radkit_result = response[params["device_name"]]
 
     ansible_results = []
     for command in radkit_result:
@@ -200,12 +210,13 @@ def _execute_single_device_commands(
             "device_name": cmd_result.device.name,
             "command": cmd_result.command,
             "exec_status": cmd_result.status.value,
-            "exec_status_message": cmd_result.status_message,
+            "exec_status_message": getattr(cmd_result, "status_message", ""),
         }
         ansible_results.append(cmd_result_dict)
 
         if cmd_result.status.value != "SUCCESS":
-            raise AnsibleRadkitOperationError(f"{cmd_result.status_message}")
+            status_msg = getattr(cmd_result, "status_message", "Command execution failed")
+            raise AnsibleRadkitOperationError(f"{status_msg}")
 
     return radkit_result, ansible_results, response
 
@@ -225,9 +236,18 @@ def _execute_multiple_device_commands(
             )
         )
 
-    response = radkit_service.exec_command(
-        params["commands"], inventory, return_full_response=True
-    )
+    # RADKit 1.9: Ensure commands is always a list for iterable response
+    commands = params["commands"] if isinstance(params["commands"], list) else [params["commands"]]
+
+    # Call inventory.exec() directly to support list of commands (exec_command only supports single string)
+    exec_timeout = int(radkit_service.exec_timeout)
+    wait_timeout = int(radkit_service.wait_timeout)
+
+    if wait_timeout == 0:
+        response = inventory.exec(commands, timeout=exec_timeout).wait()
+    else:
+        response = inventory.exec(commands, timeout=exec_timeout).wait(wait_timeout)
+
     radkit_result = response.result
 
     # Check if all devices failed
@@ -243,7 +263,7 @@ def _execute_multiple_device_commands(
                 "device_name": cmd_result.device.name,
                 "command": cmd_result.command,
                 "exec_status": cmd_result.status.value,
-                "exec_status_message": cmd_result.status_message,
+                "exec_status_message": getattr(cmd_result, "status_message", ""),
             }
             ansible_results.append(cmd_result_dict)
 
@@ -253,7 +273,10 @@ def _execute_multiple_device_commands(
 def _parse_genie_results(
     params: Dict[str, Any], radkit_result: Dict[str, Any], response: Any, inventory: Any
 ) -> Dict[str, Any]:
-    """Parse command results using Genie parsers."""
+    """Parse command results using Genie parsers.
+
+    Supports both RADKit 1.9+ inline_results mode (default) and legacy GenieResult mode.
+    """
     if not HAS_RADKIT_GENIE:
         raise AnsibleRadkitValidationError("radkit_genie is required for parsing")
 
@@ -266,21 +289,50 @@ def _parse_genie_results(
     else:
         genie_parsed_result = radkit_genie.parse(response, os=params["os"])
 
+    # RADKit 1.9+: parse() modifies response in place and adds .data attribute with GenieParseResult
+    # Legacy mode: parse() returns GenieResult object with to_dict() method
+    if hasattr(genie_parsed_result, 'to_dict') and callable(getattr(genie_parsed_result, 'to_dict')):
+        # Legacy mode - GenieResult with to_dict() method
+        parsed_dict = genie_parsed_result.to_dict()
+    else:
+        # RADKit 1.9+ mode - extract parsed data from cmd_result.data attribute
+        # genie_parsed_result is the response, access via genie_parsed_result.result[device][command].data
+        parsed_dict = {}
+
+        # Access the result data structure
+        result_data = getattr(genie_parsed_result, 'result', genie_parsed_result)
+
+        # Iterate over devices
+        if hasattr(result_data, 'items') or hasattr(result_data, 'keys'):
+            for device_name in result_data:
+                device_results = result_data[device_name]
+                parsed_dict[device_name] = {}
+
+                # Iterate over commands
+                for command in device_results:
+                    cmd_result = device_results[command]
+                    # In RADKit 1.9, parsed data is in cmd_result.data, not cmd_result.parsed
+                    if hasattr(cmd_result, 'data') and cmd_result.data is not None:
+                        # GenieParseResult is dict-like, convert to dict
+                        parsed_dict[device_name][command] = dict(cmd_result.data)
+                    else:
+                        parsed_dict[device_name][command] = {}
+
     # Process results based on removal preferences
     if params["remove_cmd_and_device_keys"]:
-        if params.get("device_name") and len(radkit_result.keys()) == 1:
-            return genie_parsed_result.to_dict()[params["device_name"]][
-                params["commands"][0]
-            ]
+        # Normalize commands to list for indexing
+        commands_list = params["commands"] if isinstance(params["commands"], list) else [params["commands"]]
+        if params.get("device_name") and len(parsed_dict.keys()) == 1:
+            return parsed_dict[params["device_name"]][commands_list[0]]
         elif (
             not params.get("device_name")
-            and len(genie_parsed_result.keys()) == 1
-            and len(params["commands"]) == 1
+            and len(parsed_dict.keys()) == 1
+            and len(commands_list) == 1
         ):
-            device_key = list(genie_parsed_result.keys())[0]
-            return genie_parsed_result.to_dict()[device_key][params["commands"][0]]
+            device_key = list(parsed_dict.keys())[0]
+            return parsed_dict[device_key][commands_list[0]]
 
-    return genie_parsed_result.to_dict()
+    return parsed_dict
 
 
 def run_action(

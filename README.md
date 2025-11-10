@@ -9,7 +9,8 @@ Cisco RADKit (Remote Access Development Kit) is a secure, cloud-based platform t
 ## Requirements
 
 * **RADKit Client**: Install from [PyPI](https://pypi.org/project/cisco-radkit-client/) - `pip install cisco-radkit-client`
-* **Version**: RADKit 1.8.5+ 
+* **Version**: RADKit 1.9.0+
+* **Python**: 3.10, 3.11, 3.12, or 3.13
 * **Authentication**: [Certificate-based login](https://radkit.cisco.com/docs/pages/client_advanced.html) required
 * **python-proxy**: Only required for `http_proxy` module
 

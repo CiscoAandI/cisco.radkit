@@ -49,8 +49,8 @@ except ImportError:
 __metaclass__ = type
 
 # Constants
-SUPPORTED_VERSION_MIN = "1.8.0b"
-SUPPORTED_VERSION_MAX = "1.9.0b"
+SUPPORTED_VERSION_MIN = "1.9.0"
+SUPPORTED_VERSION_MAX = "2.0.0"
 DEFAULT_TIMEOUT = 0
 
 # Environment variable names
@@ -91,7 +91,7 @@ def check_if_radkit_version_supported() -> None:
             if radkit_version >= next_major or radkit_version < current_major:
                 warn(
                     f"This version of the RADKit Ansible collection is only verified "
-                    f"in the RADKit 1.8.x release. Installed RADKit version: {radkit_version}"
+                    f"in the RADKit 1.9.x release. Installed RADKit version: {radkit_version}"
                 )
     except Exception as e:
         logger.warning(f"Could not parse RADKit version: {e}")
