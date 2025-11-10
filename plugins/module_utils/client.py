@@ -49,8 +49,8 @@ except ImportError:
 __metaclass__ = type
 
 # Constants
-SUPPORTED_VERSION_MIN = "1.9.0b"
-SUPPORTED_VERSION_MAX = "2.0.0b"
+SUPPORTED_VERSION_MIN = "1.9.0"
+SUPPORTED_VERSION_MAX = "2.0.0"
 DEFAULT_TIMEOUT = 0
 
 # Environment variable names
