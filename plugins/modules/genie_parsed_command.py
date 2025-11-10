@@ -295,35 +295,60 @@ def _parse_genie_results(
         # Legacy mode - GenieResult with to_dict() method
         parsed_dict = genie_parsed_result.to_dict()
     else:
-        # RADKit 1.9+ inline_results mode - extract parsed data from response
+        # RADKit 1.9+ inline_results mode - extract parsed data from genie_parsed_result (not radkit_result)
+        # After parse(), genie_parsed_result contains the response with .parsed attributes
         parsed_dict = {}
 
-        # Handle both single device (radkit_result is SingleExecResponse) and
-        # multiple devices (radkit_result is dict)
-        if hasattr(radkit_result, 'items'):
-            # Multiple devices case - radkit_result is dict of device_name -> SingleExecResponse
-            for device_name, device_results in radkit_result.items():
-                parsed_dict[device_name] = {}
-                # RADKit 1.9: Iterate over SingleExecResponse directly (it's iterable by command)
-                for command in device_results:
-                    cmd_result = device_results[command]
-                    if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
-                        parsed_dict[device_name][command] = cmd_result.parsed
-                    else:
-                        parsed_dict[device_name][command] = {}
+        # In inline_results mode, genie_parsed_result is the response object
+        # Access it through .result to get the device results
+        if hasattr(genie_parsed_result, 'result'):
+            result_data = genie_parsed_result.result
         else:
-            # Single device case - radkit_result is SingleExecResponse
-            # Get device name from params
-            device_name = params.get("device_name")
-            if device_name:
+            result_data = genie_parsed_result
+
+        # Handle both single device and multiple devices
+        if hasattr(result_data, 'items'):
+            # Multiple devices case - result_data is dict of device_name -> device_results
+            for device_name, device_results in result_data.items():
                 parsed_dict[device_name] = {}
-                # RADKit 1.9: SingleExecResponse IS iterable by command (same as command.py pattern)
-                for command in radkit_result:
-                    cmd_result = radkit_result[command]
-                    if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
-                        parsed_dict[device_name][command] = cmd_result.parsed
-                    else:
-                        parsed_dict[device_name][command] = {}
+                # Iterate over device_results by command
+                if hasattr(device_results, 'items'):
+                    # device_results is dict-like
+                    for command, cmd_result in device_results.items():
+                        if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
+                            parsed_dict[device_name][command] = cmd_result.parsed
+                        else:
+                            parsed_dict[device_name][command] = {}
+                else:
+                    # device_results is iterable over commands
+                    for command in device_results:
+                        cmd_result = device_results[command]
+                        if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
+                            parsed_dict[device_name][command] = cmd_result.parsed
+                        else:
+                            parsed_dict[device_name][command] = {}
+        else:
+            # Single device case - extract from response using device_name
+            device_name = params.get("device_name")
+            if device_name and hasattr(result_data, '__getitem__'):
+                parsed_dict[device_name] = {}
+                device_results = result_data[device_name]
+                # Iterate over device_results by command
+                if hasattr(device_results, 'items'):
+                    # device_results is dict-like
+                    for command, cmd_result in device_results.items():
+                        if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
+                            parsed_dict[device_name][command] = cmd_result.parsed
+                        else:
+                            parsed_dict[device_name][command] = {}
+                else:
+                    # device_results is iterable over commands
+                    for command in device_results:
+                        cmd_result = device_results[command]
+                        if hasattr(cmd_result, 'parsed') and cmd_result.parsed is not None:
+                            parsed_dict[device_name][command] = cmd_result.parsed
+                        else:
+                            parsed_dict[device_name][command] = {}
 
     # Process results based on removal preferences
     if params["remove_cmd_and_device_keys"]:
