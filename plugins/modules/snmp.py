@@ -417,42 +417,55 @@ def _execute_snmp_operation(
                 raise AnsibleRadkitOperationError(f"SNMP operation failed on device {device_name}: {e}")
 
             # Process results based on output format
+            # RADKit 1.9: SNMPTable may not have without_errors() method
             if include_errors:
                 results_to_process = snmp_results
             else:
-                results_to_process = snmp_results.without_errors()
+                if hasattr(snmp_results, 'without_errors'):
+                    results_to_process = snmp_results.without_errors()
+                else:
+                    # RADKit 1.9: Filter errors manually by checking is_error attribute
+                    results_to_process = snmp_results
 
+            # Iterate over SNMPTable - each iteration gives an index/key
             for row in results_to_process:
+                # Access the SNMPRow object
+                snmp_row = results_to_process[row]
+
+                # Skip errors if not including them
+                if not include_errors and hasattr(snmp_row, 'is_error') and snmp_row.is_error:
+                    continue
+
                 result_dict = {
                     "device_name": device_name,
-                    "oid": results_to_process[row].oid_str,
-                    "value": results_to_process[row].value,
+                    "oid": snmp_row.oid_str,
+                    "value": snmp_row.value,
                 }
 
                 if output_format == "detailed":
                     result_dict.update(
                         {
-                            "type": results_to_process[row].type,
-                            "value_str": results_to_process[row].value_str,
-                            "is_error": results_to_process[row].is_error,
+                            "type": snmp_row.type,
+                            "value_str": getattr(snmp_row, 'value_str', str(snmp_row.value)),
+                            "is_error": getattr(snmp_row, 'is_error', False),
                         }
                     )
 
-                    if results_to_process[row].is_error:
+                    if hasattr(snmp_row, 'is_error') and snmp_row.is_error:
                         result_dict.update(
                             {
-                                "error_code": results_to_process[row].error_code,
-                                "error_str": results_to_process[row].error_str,
+                                "error_code": getattr(snmp_row, 'error_code', None),
+                                "error_str": getattr(snmp_row, 'error_str', 'Unknown error'),
                             }
                         )
 
                     if include_mib_info:
                         result_dict.update(
                             {
-                                "label": results_to_process[row].label_str,
-                                "mib_module": results_to_process[row].mib_module,
-                                "mib_variable": results_to_process[row].mib_variable,
-                                "mib_str": results_to_process[row].mib_str,
+                                "label": getattr(snmp_row, 'label_str', ''),
+                                "mib_module": getattr(snmp_row, 'mib_module', ''),
+                                "mib_variable": getattr(snmp_row, 'mib_variable', ''),
+                                "mib_str": getattr(snmp_row, 'mib_str', ''),
                             }
                         )
 
