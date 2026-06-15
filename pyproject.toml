@@ -8,15 +8,20 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">= 3.10, < 3.14"
-ansible = "^8.7.0"
+ansible = "^9.2.0"
 pproxy = "^2.7.0"
 httpx = "^0.27.2"
-cisco-radkit-client = "^1.9.0"
-cisco-radkit-genie = "^1.9.0"
+cisco-radkit-client = "==1.9.9"
+cisco-radkit-genie = "==1.9.9"
+
+[[tool.poetry.source]]
+name = "radkit"
+url = "https://radkit.cisco.com/pip"
+priority = "supplemental"
 
 [tool.poetry.group.dev.dependencies]
 ansible-lint = "^6.0.0"
-black = "^24.3.0"
+black = "^26.3.1"
 isort = "^5.12.0"
 yamllint = "^1.32.0"
 

@@ -503,7 +503,7 @@ def main() -> None:
     if not HAS_RADKIT:
         module.fail_json(
             msg="Required Python package 'cisco-radkit-client' is not installed. "
-            "Install it using: pip install cisco-radkit-client"
+            "Install it using: pip install --extra-index-url https://radkit.cisco.com/pip cisco-radkit-client==1.9.9"
         )
 
     # Validate parameters

@@ -8,8 +8,8 @@ Cisco RADKit (Remote Access Development Kit) is a secure, cloud-based platform t
 
 ## Requirements
 
-* **RADKit Client**: Install from [PyPI](https://pypi.org/project/cisco-radkit-client/) - `pip install cisco-radkit-client`
-* **Version**: RADKit 1.9.0+
+* **RADKit Client**: Install from [Cisco RADKit Index](https://radkit.cisco.com/pip) - `pip install --extra-index-url https://radkit.cisco.com/pip cisco-radkit-client==1.9.9`
+* **Version**: RADKit 1.9.9+ (Note: RADKit SDK packages are now hosted on a private index and have been removed from PyPI)
 * **Python**: 3.10, 3.11, 3.12, or 3.13
 * **Authentication**: [Certificate-based login](https://radkit.cisco.com/docs/pages/client_advanced.html) required
 * **python-proxy**: Only required for `http_proxy` module
@@ -18,7 +18,7 @@ Cisco RADKit (Remote Access Development Kit) is a secure, cloud-based platform t
 
 ### Install RADKit Client
 ```bash
-pip install cisco-radkit-client
+pip install --extra-index-url https://radkit.cisco.com/pip cisco-radkit-client==1.9.9
 ```
 
 ### Install Ansible Collection
@@ -327,7 +327,7 @@ router2 ansible_host=10.1.2.100  # IP must match RADKit inventory
 - Use `port_forward` module if device credentials are available
 
 **"RADKIT failure:" with empty error message**: This usually indicates:
-1. **Missing RADKit Client**: Install with `pip install cisco-radkit-client`
+1. **Missing RADKit Client**: Install with `pip install --extra-index-url https://radkit.cisco.com/pip cisco-radkit-client==1.9.9`
 2. **Invalid Credentials**: Check your environment variables:
    ```bash
    echo $RADKIT_ANSIBLE_IDENTITY
@@ -374,7 +374,7 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 ### Links & Resources
 - **RADKit Documentation**: [radkit.cisco.com](https://radkit.cisco.com)
-- **PyPI Package**: [cisco-radkit-client](https://pypi.org/project/cisco-radkit-client/)
+- **RADKit Index**: [radkit.cisco.com/pip](https://radkit.cisco.com/pip)
 - **Certificate Setup**: [Authentication Guide](https://radkit.cisco.com/docs/pages/client_advanced.html)
 - **SSH Forwarding**: [Feature Documentation](https://radkit.cisco.com/docs/features/feature_ssh_forwarding.html)
 - **Port Forwarding**: [Feature Documentation](https://radkit.cisco.com/docs/features/feature_port_forwarding.html)
