@@ -18,7 +18,7 @@ jobs:
         fetch-depth: 0  # Fetch full history for changelog generation
         
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
         
@@ -32,41 +32,36 @@ jobs:
     - name: Extract version from tag
       id: version
       run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        TAG="${GITHUB_REF#refs/tags/}"
+        VERSION="${TAG#v}"
+        if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.]+)?$'; then
+          echo "Invalid version derived from tag: $TAG"; exit 1
+        fi
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
         
     - name: Update version files
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
       run: |
-        VERSION="${{ steps.version.outputs.version }}"
-        
-        # Update galaxy.yml version
-        sed -i "s/version: .*/version: $VERSION/" galaxy.yml
-        
-        # Update pyproject.toml version using Python
-        python << EOF
-        import toml
-        import sys
-        
-        # Read current pyproject.toml
+        # Update galaxy.yml version (VERSION is validated semver, anchor pattern to start of line)
+        sed -i "s/^version: .*/version: ${VERSION}/" galaxy.yml
+
+        # Update pyproject.toml version using Python (read VERSION from env, not interpolated)
+        python - << 'PY'
+        import os, toml
+        v = os.environ['VERSION']
         with open('pyproject.toml', 'r') as f:
             data = toml.load(f)
-        
-        # Update version
-        current_version = data.get('tool', {}).get('poetry', {}).get('version', '')
-        new_version = '$VERSION'
-        
-        if current_version != new_version:
-            data['tool']['poetry']['version'] = new_version
-            
-            # Write back to file
+        cur = data.get('tool', {}).get('poetry', {}).get('version', '')
+        if cur != v:
+            data['tool']['poetry']['version'] = v
             with open('pyproject.toml', 'w') as f:
                 toml.dump(data, f)
-            
-            print(f"Updated pyproject.toml version from {current_version} to {new_version}")
+            print(f"Updated pyproject.toml {cur} -> {v}")
         else:
-            print(f"pyproject.toml version already up to date: {current_version}")
-        EOF
+            print(f"pyproject.toml already {cur}")
+        PY
         
     - name: Check for version changes
       id: check_changes
@@ -82,16 +77,19 @@ jobs:
         
     - name: Generate changelog
       id: changelog
+      env:
+        TAG: ${{ steps.version.outputs.tag }}
       run: |
-        # Generate changelog for this release
-        git-changelog --template keepachangelog --output RELEASE_CHANGELOG.md --sections "feat,fix,refactor,perf" --starting-tag ${{ steps.version.outputs.tag }}
-        
+        # Generate changelog for this release (TAG from env, quoted)
+        git-changelog --template keepachangelog --output RELEASE_CHANGELOG.md \
+          --sections "feat,fix,refactor,perf" --starting-tag "$TAG"
+
         # Update main CHANGELOG.md
         if [ ! -f CHANGELOG.md ]; then
           echo "# Changelog" > CHANGELOG.md
           echo "" >> CHANGELOG.md
         fi
-        
+
         # Insert new changelog entry at the top
         temp_file=$(mktemp)
         head -n 2 CHANGELOG.md > "$temp_file"
@@ -100,81 +98,72 @@ jobs:
         echo "" >> "$temp_file"
         tail -n +3 CHANGELOG.md >> "$temp_file"
         mv "$temp_file" CHANGELOG.md
-        
-        # Set changelog content for release notes
-        echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        cat RELEASE_CHANGELOG.md >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+
+        # Set changelog content for release notes using a random delimiter (prevents injection)
+        DELIM="ghout_$(openssl rand -hex 16)"
+        {
+          echo "changelog<<$DELIM"
+          cat RELEASE_CHANGELOG.md
+          echo "$DELIM"
+        } >> "$GITHUB_OUTPUT"
         
     - name: Commit updated files
       if: steps.check_changes.outputs.changes == 'true'
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add galaxy.yml pyproject.toml CHANGELOG.md
-        git commit -m "chore: update version to ${{ steps.version.outputs.version }} and changelog"
+        git commit -m "chore: update version to ${VERSION} and changelog"
         git push origin HEAD:main
-        
+
     - name: Commit changelog only
       if: steps.check_changes.outputs.changes == 'false'
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add CHANGELOG.md
-        git commit -m "chore: update changelog for ${{ steps.version.outputs.version }}" || exit 0
+        git commit -m "chore: update changelog for ${VERSION}" || exit 0
         git push origin HEAD:main
         
     - name: Build Ansible collection
       run: |
         ansible-galaxy collection build
         
-    - name: Find collection artifact
-      id: artifact
-      run: |
-        ARTIFACT=$(ls *.tar.gz | head -n 1)
-        echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
-        echo "artifact_path=$(pwd)/$ARTIFACT" >> $GITHUB_OUTPUT
-        
     - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.version.outputs.tag }}
-        release_name: Release ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.tag }}
         body: |
           ## What's Changed
-          
+
           ${{ steps.changelog.outputs.changelog }}
-          
+
           ## Installation
-          
+
           ```bash
           ansible-galaxy collection install cisco.radkit:${{ steps.version.outputs.version }}
           ```
-          
+
           Or download the collection artifact below and install locally:
-          
+
           ```bash
-          ansible-galaxy collection install ${{ steps.artifact.outputs.artifact }}
+          ansible-galaxy collection install cisco-radkit-${{ steps.version.outputs.version }}.tar.gz
           ```
-          
+
+        files: ./*.tar.gz
         draft: false
         prerelease: false
-        
-    - name: Upload collection artifact to release
-      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.artifact.outputs.artifact_path }}
-        asset_name: ${{ steps.artifact.outputs.artifact }}
-        asset_content_type: application/gzip
-        
+
     - name: Publish to Ansible Galaxy
-      run: |
-        ansible-galaxy collection publish ${{ steps.artifact.outputs.artifact }} --token ${{ secrets.ANSIBLE_GALAXY_TOKEN }}
       env:
         ANSIBLE_GALAXY_TOKEN: ${{ secrets.ANSIBLE_GALAXY_TOKEN }}
+      run: |
+        artifact=$(ls -1 ./*.tar.gz | head -n1)
+        ansible-galaxy collection publish "$artifact" --token "$ANSIBLE_GALAXY_TOKEN"
