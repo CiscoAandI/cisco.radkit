@@ -1,4 +1,5 @@
-cisco-radkit-client
-cisco-radkit-genie
+--extra-index-url https://radkit.cisco.com/pip
+cisco-radkit-client==1.9.9
+cisco-radkit-genie==1.9.9
 pproxy
 packaging

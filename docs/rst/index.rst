@@ -395,7 +395,7 @@ Network Device Issues
 
 **"RADKIT failure:" with empty error message**: This usually indicates:
 
-1. **Missing RADKit Client**: Install with ``pip install cisco-radkit-client``
+1. **Missing RADKit Client**: Install with ``pip install --extra-index-url https://radkit.cisco.com/pip cisco-radkit-client==1.9.9``
 2. **Invalid Credentials**: Check your environment variables:
 
    .. code-block:: bash

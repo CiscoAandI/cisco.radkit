@@ -1,6 +1,6 @@
-# GitHub Actions Documentation Workflows Configuration
+# GitHub Actions Workflows Configuration
 
-This directory contains GitHub Actions workflows for building and deploying your Ansible collection documentation.
+This directory contains GitHub Actions workflows for building and deploying your Ansible collection documentation, running integration tests, and publishing releases.
 
 ## Workflows
 
@@ -53,6 +53,51 @@ This directory contains GitHub Actions workflows for building and deploying your
 - Validates galaxy.yml format
 - Ensures all plugins have docstrings
 - Generates documentation coverage report
+
+### 4. integration-tests.yml
+**Purpose**: Run the collection's `ansible-test integration` suite against real RADKit devices.
+
+**Triggers**:
+- Manual workflow dispatch only (`workflow_dispatch`)
+
+> **Note**: This workflow does **not** run automatically on pull requests or pushes.
+> Because it requires privileged RADKit secrets and connects to real devices, it must be
+> started manually from the Actions tab. This avoids exposing secrets to untrusted pull
+> request code.
+
+**Inputs**:
+- `test_target`: Optional single target to run (leave empty to run all targets). Validated
+  against `^[A-Za-z0-9._-]+$` before use.
+- `verbosity`: Ansible verbosity level (`0`–`3`, default `1`).
+
+**What it does**:
+- Installs Python, Ansible, and the collection
+- Restores RADKit certificates and the integration config from repository secrets
+- Runs `ansible-test integration` (all targets or a specific target)
+- Uploads test results as artifacts
+
+**Required secrets**: see [`secrets-template.md`](../secrets-template.md).
+
+### 5. release.yml
+**Purpose**: Build, tag, and publish a new collection release.
+
+**Triggers**:
+- Pushes of tags matching `v*` (e.g. `v1.2.3`)
+
+**What it does**:
+- Validates the tag is strict semver before proceeding
+- Updates `galaxy.yml` and `pyproject.toml` versions and the changelog, then commits them
+- Builds the collection artifact
+- Creates a GitHub Release via `softprops/action-gh-release`
+- Publishes the collection to Ansible Galaxy
+
+**Cutting a release**:
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+**Required secrets**: `GITHUB_TOKEN` (provided automatically) and `ANSIBLE_GALAXY_TOKEN`.
 
 ## Configuration
 

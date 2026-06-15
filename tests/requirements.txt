@@ -1,7 +1,8 @@
-ansible-core>=2.12.0
+ansible-core>=2.16.13
 pytest>=6.0
 pytest-mock
-cisco-radkit-client
-cisco-radkit-genie
+--extra-index-url https://radkit.cisco.com/pip
+cisco-radkit-client==1.9.9
+cisco-radkit-genie==1.9.9
 pproxy
 packaging

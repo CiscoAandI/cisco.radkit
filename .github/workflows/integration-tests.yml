@@ -1,22 +1,6 @@
 name: Integration Tests
 
 on:
-  pull_request:
-    branches: [ main, master ]
-    paths:
-      - 'plugins/**'
-      - 'tests/integration/**'
-      - 'galaxy.yml'
-      - '.github/workflows/integration-tests.yml'
-
-  push:
-    branches: [ main, master ]
-    paths:
-      - 'plugins/**'
-      - 'tests/integration/**'
-      - 'galaxy.yml'
-      - '.github/workflows/integration-tests.yml'
-
   workflow_dispatch:
     inputs:
       test_target:
@@ -34,6 +18,9 @@ on:
           - '2'
           - '3'
 
+permissions:
+  contents: read  # least-privilege; no write access needed for integration tests
+
 env:
   ANSIBLE_HOST_KEY_CHECKING: false
   ANSIBLE_FORCE_COLOR: true
@@ -45,19 +32,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Ansible 6.x (ansible-core 2.13) - supports Python 3.10
+          # Ansible 9.x (ansible-core 2.16) - supports Python 3.10, 3.11, 3.12
           - python-version: '3.10'
-            ansible-version: 'ansible>=6.0.0,<7.0.0'
-
-          # Ansible 7.x (ansible-core 2.14) - supports Python 3.10, 3.11
+            ansible-version: 'ansible>=9.0.0,<10.0.0'
           - python-version: '3.11'
-            ansible-version: 'ansible>=7.0.0,<8.0.0'
+            ansible-version: 'ansible>=9.0.0,<10.0.0'
+          - python-version: '3.12'
+            ansible-version: 'ansible>=9.0.0,<10.0.0'
 
-          # Ansible 8.x (ansible-core 2.15) - supports Python 3.10, 3.11
-          - python-version: '3.10'
-            ansible-version: 'ansible>=8.0.0,<9.0.0'
+          # Ansible 10.x (ansible-core 2.17) - supports Python 3.10, 3.11, 3.12, 3.13
           - python-version: '3.11'
-            ansible-version: 'ansible>=8.0.0,<9.0.0'
+            ansible-version: 'ansible>=10.0.0,<11.0.0'
+          - python-version: '3.12'
+            ansible-version: 'ansible>=10.0.0,<11.0.0'
+          - python-version: '3.13'
+            ansible-version: 'ansible>=10.0.0,<11.0.0'
 
     steps:
       - name: Checkout repository
@@ -120,19 +109,36 @@ jobs:
           echo "Session logs directory created and permissions set"
 
       - name: Create integration config from secrets
+        env:
+          IOS_DEVICE_NAME_1: ${{ secrets.IOS_DEVICE_NAME_1 }}
+          IOS_DEVICE_NAME_2: ${{ secrets.IOS_DEVICE_NAME_2 }}
+          LINUX_DEVICE_NAME_1: ${{ secrets.LINUX_DEVICE_NAME_1 }}
+          HTTP_DEVICE_NAME_1: ${{ secrets.HTTP_DEVICE_NAME_1 }}
+          SWAGGER_DEVICE_NAME_1: ${{ secrets.SWAGGER_DEVICE_NAME_1 }}
+          IOS_DEVICE_NAME_PREFIX: ${{ secrets.IOS_DEVICE_NAME_PREFIX }}
+          RADKIT_SERVICE_SERIAL: ${{ secrets.RADKIT_SERVICE_SERIAL }}
+          RADKIT_IDENTITY: ${{ secrets.RADKIT_IDENTITY }}
+          RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64: ${{ secrets.RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 }}
         run: |
-          mkdir -p ~/.ansible/collections/ansible_collections/cisco/radkit/tests/integration
-          cat > ~/.ansible/collections/ansible_collections/cisco/radkit/tests/integration/integration_config.yml << EOF
-          ios_device_name_1: '${{ secrets.IOS_DEVICE_NAME_1 }}'
-          ios_device_name_2: '${{ secrets.IOS_DEVICE_NAME_2 }}'
-          linux_device_name_1: '${{ secrets.LINUX_DEVICE_NAME_1 }}'
-          http_device_name_1: '${{ secrets.HTTP_DEVICE_NAME_1 }}'
-          swagger_device_name_1: '${{ secrets.SWAGGER_DEVICE_NAME_1 }}'
-          ios_device_name_prefix: '${{ secrets.IOS_DEVICE_NAME_PREFIX }}'
-          radkit_service_serial: '${{ secrets.RADKIT_SERVICE_SERIAL }}'
-          radkit_identity: '${{ secrets.RADKIT_IDENTITY }}'
-          radkit_client_private_key_password_base64: '${{ secrets.RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64 }}'
-          EOF
+          dir=~/.ansible/collections/ansible_collections/cisco/radkit/tests/integration
+          mkdir -p "$dir"
+          python - "$dir/integration_config.yml" << 'PY'
+          import os, sys, yaml
+          keys = {
+            'ios_device_name_1': 'IOS_DEVICE_NAME_1',
+            'ios_device_name_2': 'IOS_DEVICE_NAME_2',
+            'linux_device_name_1': 'LINUX_DEVICE_NAME_1',
+            'http_device_name_1': 'HTTP_DEVICE_NAME_1',
+            'swagger_device_name_1': 'SWAGGER_DEVICE_NAME_1',
+            'ios_device_name_prefix': 'IOS_DEVICE_NAME_PREFIX',
+            'radkit_service_serial': 'RADKIT_SERVICE_SERIAL',
+            'radkit_identity': 'RADKIT_IDENTITY',
+            'radkit_client_private_key_password_base64': 'RADKIT_CLIENT_PRIVATE_KEY_PASSWORD_BASE64',
+          }
+          data = {k: os.environ.get(v, '') for k, v in keys.items()}
+          with open(sys.argv[1], 'w') as f:
+            yaml.safe_dump(data, f, default_flow_style=False)
+          PY
 
       - name: Verify integration config
         run: |
@@ -196,8 +202,8 @@ jobs:
         if: ${{ github.event.inputs.test_target == '' }}
         run: |
           cd ~/.ansible/collections/ansible_collections/cisco/radkit
-          verbosity_level=${{ github.event.inputs.verbosity || '1' }}
-          
+          verbosity_level="${VERBOSITY:-1}"
+
           # Convert numeric verbosity to ansible-test format
           case $verbosity_level in
             0) verbosity_flags="" ;;
@@ -206,12 +212,13 @@ jobs:
             3) verbosity_flags="-vvv" ;;
             *) verbosity_flags="-v" ;;
           esac
-          
+
           # Run ansible-test integration with proper verbosity
           ansible-test integration --color $verbosity_flags \
             --requirements \
             --python ${{ matrix.python-version }}
         env:
+          VERBOSITY: ${{ github.event.inputs.verbosity }}
           ANSIBLE_CONFIG: ${{ github.workspace }}/ansible.cfg
           RADKIT_ANSIBLE_IDENTITY: ${{ secrets.RADKIT_IDENTITY }}
           RADKIT_ANSIBLE_SERVICE_SERIAL: ${{ secrets.RADKIT_SERVICE_SERIAL }}
@@ -227,8 +234,8 @@ jobs:
         if: ${{ github.event.inputs.test_target != '' }}
         run: |
           cd ~/.ansible/collections/ansible_collections/cisco/radkit
-          verbosity_level=${{ github.event.inputs.verbosity || '1' }}
-          
+          verbosity_level="${VERBOSITY:-1}"
+
           # Convert numeric verbosity to ansible-test format
           case $verbosity_level in
             0) verbosity_flags="" ;;
@@ -237,13 +244,20 @@ jobs:
             3) verbosity_flags="-vvv" ;;
             *) verbosity_flags="-v" ;;
           esac
-          
+
+          # TEST_TARGET comes from env; validate it is a simple target name
+          if ! printf '%s' "$TEST_TARGET" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+            echo "Invalid test_target: only [A-Za-z0-9._-] allowed"; exit 1
+          fi
+
           # Run specific target
-          ansible-test integration ${{ github.event.inputs.test_target }} \
+          ansible-test integration "$TEST_TARGET" \
             --color $verbosity_flags \
             --requirements \
             --python ${{ matrix.python-version }}
         env:
+          VERBOSITY: ${{ github.event.inputs.verbosity }}
+          TEST_TARGET: ${{ github.event.inputs.test_target }}
           ANSIBLE_CONFIG: ${{ github.workspace }}/ansible.cfg
           RADKIT_ANSIBLE_IDENTITY: ${{ secrets.RADKIT_IDENTITY }}
           RADKIT_ANSIBLE_SERVICE_SERIAL: ${{ secrets.RADKIT_SERVICE_SERIAL }}
@@ -257,31 +271,29 @@ jobs:
 
       - name: Run manual integration tests (fallback)
         if: failure()
+        env:
+          IOS_DEVICE_NAME_1: ${{ secrets.IOS_DEVICE_NAME_1 }}
+          IOS_DEVICE_NAME_2: ${{ secrets.IOS_DEVICE_NAME_2 }}
+          LINUX_DEVICE_NAME_1: ${{ secrets.LINUX_DEVICE_NAME_1 }}
+          HTTP_DEVICE_NAME_1: ${{ secrets.HTTP_DEVICE_NAME_1 }}
+          SWAGGER_DEVICE_NAME_1: ${{ secrets.SWAGGER_DEVICE_NAME_1 }}
         run: |
           echo "Running manual integration tests as fallback..."
           cd tests/integration
-          
-          # Create a simple inventory
-          cat > inventory << EOF
-          [ios_devices]
-          ${{ secrets.IOS_DEVICE_NAME_1 }}
-          ${{ secrets.IOS_DEVICE_NAME_2 }}
-          
-          [linux_devices]
-          ${{ secrets.LINUX_DEVICE_NAME_1 }}
-          
-          [http_devices]
-          ${{ secrets.HTTP_DEVICE_NAME_1 }}
-          
-          [swagger_devices]
-          ${{ secrets.SWAGGER_DEVICE_NAME_1 }}
-          EOF
-          
+
+          # Create a simple inventory from env vars (no ${{ }} interpolation)
+          {
+            printf '[ios_devices]\n%s\n%s\n\n' "$IOS_DEVICE_NAME_1" "$IOS_DEVICE_NAME_2"
+            printf '[linux_devices]\n%s\n\n' "$LINUX_DEVICE_NAME_1"
+            printf '[http_devices]\n%s\n\n' "$HTTP_DEVICE_NAME_1"
+            printf '[swagger_devices]\n%s\n' "$SWAGGER_DEVICE_NAME_1"
+          } > inventory
+
           # Run basic connectivity tests
           for target in targets/*/; do
             target_name=$(basename "$target")
             echo "Testing target: $target_name"
-            
+
             if [ -f "$target/tasks/main.yml" ]; then
               ansible-playbook -i inventory \
                 -e @integration_config.yml \
@@ -304,7 +316,6 @@ jobs:
           name: ${{ steps.artifact-name.outputs.name }}
           path: |
             tests/integration/.ansible_test/
-            tests/integration/inventory
             tests/integration/ansible.cfg
           retention-days: 30
 
