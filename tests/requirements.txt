@@ -1,4 +1,4 @@
-ansible-core>=2.16.13
+ansible-core>=2.16.19rc1
 pytest>=6.0
 pytest-mock
 --extra-index-url https://radkit.cisco.com/pip
